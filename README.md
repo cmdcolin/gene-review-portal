@@ -25,6 +25,15 @@ Live example, built from the command in
 [`demos/`](https://jbrowse.org/demos/tiberius_review/): Tiberius on human
 chr22, read against GENCODE 47.
 
+![The review page: a control bar, and one card per flagged model](docs/review-page-light.png)
+
+The page follows the reader's theme, so the same portal is legible either way:
+
+![The same page in dark mode](docs/review-page-dark.png)
+
+Both are `pnpm test`'s own fixture, captured against a local JBrowse build —
+`docs/shoot.mjs` rebuilds them.
+
 ## Install
 
 ```bash
@@ -140,7 +149,7 @@ actually differ, named `<transcript>:<what disagrees>`:
 
 ```
 chr22  21636314  21636431  g13605.t1:donor-1048     0  +
-chr22  23977067  23977386  g13682.t1:acceptor+3025  0  -
+chr22  23977067  23977386  g13682.t1:donor+3025     0  -
 chr22  50012765  50018574  g14001.t1:split          0  -
 ```
 
@@ -155,6 +164,12 @@ chr22  50012765  50018574  g14001.t1:split          0  -
 | `novel-intron`                 | no reference intron nearby at all                                  |
 | `split`                        | a merged model's cut point: the gap between the genes it joined    |
 | `novel-locus` / `novel-coding` | the model's span, having no reference gene to disagree with        |
+
+**Donor and acceptor are read in the direction of transcription**, not left to
+right. The donor is the intron's 5' end, so it is the record's `start` on a `+`
+model and its `end` on a `-` one — which is why the row above, on the minus
+strand, names the right-hand end. Naming the two sites by coordinate instead
+puts every minus-strand edit at the wrong end of its intron.
 
 The same file rides in every capture and every live link as the
 **Disagreements** track, directly under the prediction, so the picture points at
