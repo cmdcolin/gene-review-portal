@@ -55,6 +55,10 @@ STRONGLY RECOMMENDED
 OPTIONAL
   --rnaseq <bam>         evidence track, repeatable. Appears in every capture
                          and every live link.
+  --rnaseq-name <s>      label for the evidence track, repeatable and paired
+                         with --rnaseq in order. Two unlabelled tracks are
+                         "RNA-seq 1" and "RNA-seq 2", which says nothing about
+                         which tissue is which.
   --aliases <file|url>   a refName alias table (UCSC style, two columns). Needed
                          whenever the annotations say chr22 and the FASTA says 22,
                          which JBrowse reports as "unknown reference sequence name".
@@ -99,6 +103,7 @@ EXAMPLE
 function parseArgs(argv) {
   const o = {
     rnaseq: [],
+    rnaseqName: [],
     region: [],
     max: 12,
     width: 1400,
@@ -117,6 +122,8 @@ function parseArgs(argv) {
       o.fasta = next()
     } else if (a === '--rnaseq') {
       o.rnaseq.push(next())
+    } else if (a === '--rnaseq-name') {
+      o.rnaseqName.push(next())
     } else if (a === '--assembly') {
       o.assembly = next()
     } else if (a === '--region') {
@@ -226,6 +233,7 @@ const config = buildConfig({
   predictionRef,
   referenceRef,
   rnaRefs,
+  rnaNames: opts.rnaseqName,
   predictionName:
     opts.predictionName ||
     path.basename(opts.prediction).replace(/\.gff3?(\.gz)?$/i, ''),
