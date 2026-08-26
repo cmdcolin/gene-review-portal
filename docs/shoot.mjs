@@ -32,7 +32,7 @@ execFileSync(
     '--reference', path.join(fixture, 'reference.gff3'),
     '--fasta', path.join(fixture, 'genome.fa'),
     '--assembly', 'fixture',
-    '--title', 'Fixture gene models that need a human',
+    '--title', 'Fixture gene models',
     ...(appDir ? ['--app-dir', appDir] : ['--with-app']),
     '--width', '1200',
     '--height', '340',

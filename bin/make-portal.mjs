@@ -611,7 +611,7 @@ if (opts.measurement && rows.length) {
   }
 }
 
-const title = opts.title || `${assembly} gene models that need a human`
+const title = opts.title || `${assembly} gene models`
 const data = {
   portalId,
   title,
