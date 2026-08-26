@@ -26,15 +26,18 @@ import {
 } from '../lib/measurements.mjs'
 import { renderPage } from '../lib/page.mjs'
 import {
-  assemblyFromHub,
   buildConfig,
   checkTools,
+  fetchHubConfig,
   fetchRegions,
+  hubTracks,
   isUrl,
+  listHubs,
   prepareBam,
   prepareBed,
   prepareFasta,
   prepareGff,
+  trackFromHub,
   usesCsi,
 } from '../lib/prepare.mjs'
 import { serveStatic } from '../lib/serve.mjs'
@@ -83,12 +86,19 @@ OPTIONAL
   --prediction-name <s>  track label for the prediction (default: its filename)
   --reference-name <s>   track label for the reference (default: its filename)
   --assembly <name>      assembly name in the config (default: the fasta's basename)
-  --assembly-from <url>  take the assembly from a published JBrowse config
-                         instead of building one — \`https://jbrowse.org/ucsc/hg38/config.json\`
-                         and the ~50,000 GenArk hubs beside it. Its sequence,
-                         chrom.sizes and refName aliases arrive already wired,
-                         which is the whole of --fasta and --aliases. Replaces
-                         --fasta.
+  --hub <name>           take the assembly from the hub of that name rather
+                         than building one: a UCSC database (\`hg38\`, \`mm39\`)
+                         or a GenArk accession (\`GCF_000001405.40\`). Its
+                         sequence, chrom.sizes, refName aliases and cytobands
+                         arrive already wired, which is the whole of --fasta and
+                         --aliases. Replaces --fasta.
+  --assembly-from <url>  the same, for a JBrowse config.json at a URL a hub name
+                         does not reach.
+  --reference-track <id> use one of that hub's own annotation tracks as
+                         --reference, so a GENCODE that tracks the hub replaces
+                         a URL somebody pasted once. Needs --hub.
+  --list-hubs            print the assembly names --hub takes, and stop
+  --list-tracks          print the annotation tracks in --hub, and stop
   --region <refName>     restrict the scan to one contig, repeatable
   --max <n>              candidates kept per class (default 12)
   --title <text>         page heading
@@ -148,6 +158,8 @@ const TEXT = {
   '--fasta': 'fasta',
   '--assembly': 'assembly',
   '--assembly-from': 'assemblyFrom',
+  '--hub': 'hub',
+  '--reference-track': 'referenceTrack',
   '--out': 'out',
   '--title': 'title',
   '--instance': 'instance',
@@ -178,6 +190,8 @@ const SWITCHES = {
   '--with-app': ['withApp', true],
   '--no-capture': ['capture', false],
   '--inline-images': ['inlineImages', true],
+  '--list-hubs': ['listHubs', true],
+  '--list-tracks': ['listTracks', true],
   '--help': ['help', true],
   '-h': ['help', true],
 }
@@ -232,12 +246,33 @@ try {
   console.error(e.message)
   process.exit(1)
 }
-if (opts.help || !opts.prediction || !(opts.fasta || opts.assemblyFrom) || !opts.out) {
+if (opts.listHubs) {
+  console.log(await listHubs())
+  process.exit(0)
+}
+if (opts.listTracks) {
+  if (!opts.hub && !opts.assemblyFrom) {
+    console.error('--list-tracks lists the tracks in a hub; name one with --hub')
+    process.exit(1)
+  }
+  console.log(hubTracks(await fetchHubConfig(opts)))
+  process.exit(0)
+}
+const fromHub = opts.hub || opts.assemblyFrom
+if (opts.help || !opts.prediction || !(opts.fasta || fromHub) || !opts.out) {
   usage()
   process.exit(opts.help ? 0 : 1)
 }
-if (opts.fasta && opts.assemblyFrom) {
-  console.error('--fasta and --assembly-from both say what the assembly is')
+if (opts.fasta && fromHub) {
+  console.error('--fasta and --hub/--assembly-from both say what the assembly is')
+  process.exit(1)
+}
+if (opts.hub && opts.assemblyFrom) {
+  console.error('--hub and --assembly-from both say which config to take it from')
+  process.exit(1)
+}
+if (opts.referenceTrack && !fromHub) {
+  console.error('--reference-track names a track in a hub; name one with --hub')
   process.exit(1)
 }
 if (opts.appDir && opts.appBranch) {
@@ -267,9 +302,15 @@ for (const f of [
 const out = path.resolve(opts.out)
 const dataDir = path.join(out, 'data')
 const imgDir = path.join(out, 'img')
-const hubAssembly = opts.assemblyFrom
-  ? await assemblyFromHub(opts.assemblyFrom)
-  : null
+const hub = fromHub ? await fetchHubConfig(opts) : null
+const hubAssembly = hub?.assemblies[0] ?? null
+let referenceAdapter = null
+if (opts.referenceTrack) {
+  const track = trackFromHub(hub, opts.referenceTrack)
+  opts.reference = track.uri
+  opts.referenceName = opts.referenceName || track.name
+  referenceAdapter = track.adapter
+}
 const assembly =
   opts.assembly ||
   hubAssembly?.name ||
@@ -352,7 +393,11 @@ const config = buildConfig({
   predictionCsi: await usesCsi(predictionRef, dataDir),
   conflictsRef,
   referenceRef,
-  referenceCsi: referenceRef ? await usesCsi(referenceRef, dataDir) : false,
+  referenceAdapter,
+  referenceCsi:
+    referenceRef && !referenceAdapter
+      ? await usesCsi(referenceRef, dataDir)
+      : false,
   rnaRefs,
   rnaNames: opts.rnaseqName,
   rnaHeight: opts.rnaseqHeight,

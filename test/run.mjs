@@ -14,7 +14,15 @@ import {
 } from '../lib/capture.mjs'
 import { classify, CLASSES, conflictBed } from '../lib/classify.mjs'
 import { renderPage } from '../lib/page.mjs'
-import { buildConfig, usesCsi } from '../lib/prepare.mjs'
+import {
+  buildConfig,
+  fetchHubConfig,
+  hubTracks,
+  hubUrl,
+  trackFromHub,
+  usesCsi,
+} from '../lib/prepare.mjs'
+import { serveStatic } from '../lib/serve.mjs'
 
 const HERE = import.meta.dirname
 const FIXTURE = path.join(HERE, 'fixture')
@@ -386,6 +394,149 @@ check(
     splicedReadsFirst: true,
   },
 )
+
+// ---- finding a hub, and reading one ---------------------------------------
+
+// The same mapping core's fetchHub uses, so a name that opens in JBrowse opens
+// here: a UCSC database is a flat path, a GenArk accession fans its nine digits
+// into three levels.
+check('a UCSC database name is a flat hub path', hubUrl('hg38'), 'https://jbrowse.org/ucsc/hg38/config.json')
+check(
+  'a GenArk accession is sharded three deep',
+  hubUrl('GCF_000001405.40'),
+  'https://jbrowse.org/hubs/genark/GCF/000/001/405/GCF_000001405.40/config.json',
+)
+
+// A hub read over HTTP, served locally so this stays offline. What matters is
+// what comes back out: every URI absolute against the config's own location,
+// and `metadata` untouched.
+const hubDir = fs.mkdtempSync(path.join(os.tmpdir(), 'portal-hub-'))
+fs.writeFileSync(
+  path.join(hubDir, 'config.json'),
+  JSON.stringify({
+    assemblies: [
+      {
+        name: 'tst1',
+        sequence: {
+          type: 'ReferenceSequenceTrack',
+          trackId: 'tst1-ref',
+          // UCSC's own bookkeeping rides along for description. It is full of
+          // things shaped like relative paths and none of them is ours to
+          // rewrite — a published config whose metadata no longer says what the
+          // hub's does is worse than one that carries it verbatim.
+          metadata: { twoBitPath: 'tst1.2bit', chromSizes: 'tst1.chrom.sizes' },
+          adapter: {
+            type: 'TwoBitAdapter',
+            uri: 'tst1.2bit',
+            chromSizes: 'tst1.chrom.sizes',
+          },
+        },
+        refNameAliases: {
+          adapter: { type: 'RefNameAliasAdapter', uri: 'tst1.chromAlias.txt' },
+        },
+      },
+    ],
+    tracks: [
+      {
+        type: 'FeatureTrack',
+        trackId: 'tst1-genes',
+        name: 'Genes',
+        adapter: { type: 'Gff3TabixAdapter', uri: 'genes.gff3.gz' },
+      },
+      {
+        // The long form, which is what a hub big enough to need a CSI writes:
+        // the file under a *GzLocation and the index named outright rather than
+        // assumed to sit beside it. hg38's GENCODE is one of these.
+        type: 'FeatureTrack',
+        trackId: 'tst1-gencode',
+        name: 'GENCODE',
+        adapter: {
+          type: 'Gff3TabixAdapter',
+          gffGzLocation: { uri: 'gencode.gff3.gz', locationType: 'UriLocation' },
+          index: {
+            location: { uri: 'elsewhere/gencode.csi', locationType: 'UriLocation' },
+            indexType: 'CSI',
+          },
+        },
+      },
+      {
+        type: 'QuantitativeTrack',
+        trackId: 'tst1-signal',
+        name: 'Signal',
+        adapter: { type: 'BigWigAdapter', uri: 'signal.bw' },
+      },
+    ],
+  }),
+)
+const hubServer = await serveStatic(hubDir)
+const hubConfig = await fetchHubConfig({
+  assemblyFrom: `${hubServer.url}/config.json`,
+})
+await hubServer.close()
+
+const seqAdapter = hubConfig.assemblies[0].sequence.adapter
+check(
+  'a hub URI comes back absolute against the config it came from',
+  [seqAdapter.uri, seqAdapter.chromSizes],
+  [`${hubServer.url}/tst1.2bit`, `${hubServer.url}/tst1.chrom.sizes`],
+)
+check(
+  'and so does one nested under refNameAliases',
+  hubConfig.assemblies[0].refNameAliases.adapter.uri,
+  `${hubServer.url}/tst1.chromAlias.txt`,
+)
+check(
+  'but metadata is carried verbatim, path-shaped values and all',
+  hubConfig.assemblies[0].sequence.metadata,
+  { twoBitPath: 'tst1.2bit', chromSizes: 'tst1.chrom.sizes' },
+)
+
+// --reference has to be something the classifier can tabix, so the listing is
+// annotation tracks — not the signal and variant tracks that make up most of a
+// hub's six hundred.
+check(
+  'only annotation tracks are offered as a reference',
+  hubTracks(hubConfig),
+  ['  tst1-genes    Genes', '  tst1-gencode  GENCODE'].join('\n'),
+)
+check(
+  'and one of them resolves to a readable file',
+  trackFromHub(hubConfig, 'tst1-genes').uri,
+  `${hubServer.url}/genes.gff3.gz`,
+)
+// The long form is the one that matters: reading only `adapter.uri` found
+// nothing on hg38's GENCODE and refused the track it was pointed at.
+check(
+  'the long adapter form names its file too',
+  trackFromHub(hubConfig, 'tst1-gencode').uri,
+  `${hubServer.url}/gencode.gff3.gz`,
+)
+// Carried whole rather than rebuilt from the uri: a rebuilt one can only assume
+// the index sits adjacent, and this hub's does not.
+check(
+  "and the hub's own adapter is what goes into the config",
+  trackFromHub(hubConfig, 'tst1-gencode').adapter.index,
+  {
+    location: {
+      uri: `${hubServer.url}/elsewhere/gencode.csi`,
+      locationType: 'UriLocation',
+    },
+    indexType: 'CSI',
+  },
+)
+check(
+  'a trackId the hub does not carry says so, and says where to look',
+  (() => {
+    try {
+      trackFromHub(hubConfig, 'nope')
+      return 'no error'
+    } catch (e) {
+      return e.message
+    }
+  })(),
+  '--reference-track nope: no such track. List them with --list-tracks.',
+)
+fs.rmSync(hubDir, { recursive: true, force: true })
 
 // ---- an assembly taken from a hub ----------------------------------------
 
