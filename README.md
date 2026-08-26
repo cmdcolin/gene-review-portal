@@ -156,13 +156,26 @@ other cases survive it.
   **cannot read a config on your laptop** — that mode is for data already
   published at a public URL. The CLI says so when it applies.
 
-## Known gap
+## Staging a lane, and the gap in it
 
-`jbrowse.org/code/jb2/latest` silently drops a track entry's inline display
-settings, so the staged recipe is bare trackIds and every track arrives at its
-default. Verified: `height: 400` on a track renders at the default height. Once
-that lands, the recipe can also say _how_ to show the evidence — sorted,
-filtered, coloured — which is most of what a review preset is for.
+A card's picture and its link have to agree, so anything that says _how_ to draw
+a track has to live where both of them read it. That is the track config, which
+this pipeline writes: `--rnaseq-height` puts a `LinearAlignmentsDisplay` block
+in the evidence track, and a released JBrowse honours it in the capture and in
+the live view both.
+
+The two routes that look easier do not work:
+
+- **`displayDefaults`** on a track is the documented spelling and postdates the
+  released build — grep a `jbrowse create` bundle for the word and it is not
+  there.
+- **A session spec's `tracks` are ids**, not objects. Write a track as an object
+  to hang settings off and the whole list resolves to nothing: the view opens
+  with "No tracks active" and a `Could not resolve identifiers: ,,,` toast.
+
+So what is still missing is per-card staging — sorting, filtering or colouring
+one card's evidence differently from another's, which is most of what a review
+preset would be. That needs settings in the link, and the link is a spec.
 
 ## License
 
