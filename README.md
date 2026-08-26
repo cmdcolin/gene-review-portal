@@ -12,7 +12,7 @@ into four kinds, and only those need a person.
 ```bash
 gene-review-portal \
   --prediction tiberius.gff3 \
-  --reference gencode.v47.gff3 \
+  --reference gencode.v49.gff3 \
   --fasta GRCh38.fa \
   --rnaseq rnaseq.bam \
   --assembly hg38 --region chr22 \
@@ -23,7 +23,7 @@ npx serve ./portal
 
 Live example, built from the command in
 [`demos/`](https://jbrowse.org/demos/tiberius_review/): Tiberius on human
-chr22, read against GENCODE 47.
+chr22, read against the hub's GENCODE 49.
 
 ![The review page: a control bar, and one card per flagged model](docs/review-page-light.png)
 
@@ -178,7 +178,7 @@ the junction rather than leaving a reviewer to find it.
 **The BED reaches further than the page does.** Cards exist only for the four
 flagged classes, and a model sharing four junctions out of five is filed as
 `agrees` and never gets one — while the fifth is still a real splice-site edit.
-On chr22 that is 64 models the page cannot show and the BED lists.
+On chr22 that is 58 models the page cannot show and the BED lists.
 
 ## Evidence
 
