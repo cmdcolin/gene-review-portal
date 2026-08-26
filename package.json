@@ -29,6 +29,9 @@
     "test": "node test/run.mjs"
   },
   "dependencies": {
-    "@jbrowse/capture": "link:../jbrowse-components/products/jbrowse-capture"
+    "@jbrowse/capture": "link:../jbrowse-components/products/jbrowse-capture",
+    "esbuild": "^0.28.2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   }
 }

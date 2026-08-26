@@ -31,7 +31,8 @@ chr22, read against GENCODE 47.
 pnpm install
 ```
 
-The one dependency is [`@jbrowse/capture`](https://github.com/GMOD/jbrowse-components/tree/main/products/jbrowse-capture),
+React, react-dom and esbuild build the review page. The other dependency is
+[`@jbrowse/capture`](https://github.com/GMOD/jbrowse-components/tree/main/products/jbrowse-capture),
 which is what knows when a JBrowse has actually finished drawing — the
 difference between a directory of screenshots and a directory of pictures of
 empty browsers. It is not on npm yet, so `package.json` links it out of a
@@ -78,6 +79,24 @@ Verdicts live in the reviewer's browser (`localStorage`), which is one browser o
 one machine: **Export decisions** writes them out as TSV to hand back to a
 pipeline, and **Import** reads that TSV back, so a second reviewer, a second
 laptop or a cleared site setting is not a review started again from nothing.
+
+## How the page is built
+
+`lib/app.jsx` is a React app, and the portal renders it twice. `renderPage`
+builds it to a string with `react-dom/server` when the portal is written, so the
+cards, the captures and the prose are in `index.html` before any script runs;
+the browser hydrates the same tree to take input. Turn scripting off and the
+review page is still a readable, printable document — only judging it stops.
+
+React earns its place on the card list. Filtering used to rebuild the whole list
+from a string, which recreated every `<img>` on every keystroke — and with
+`--inline-images` each of those carries a quarter-megabyte data URI. Four
+keystrokes over 35 cards made 56 of them; keyed reconciliation makes none, with
+no hand-written "repaint just this bit" path to keep correct.
+
+esbuild does both bundles at portal-build time, so nothing is checked in and
+there is no separate build step to forget. The client bundle is about 200 KB,
+68 KB over the wire.
 
 ## How a model gets flagged
 
