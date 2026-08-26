@@ -14,7 +14,7 @@ import {
 } from '../lib/capture.mjs'
 import { classify, CLASSES, conflictBed } from '../lib/classify.mjs'
 import { renderPage } from '../lib/page.mjs'
-import { buildConfig } from '../lib/prepare.mjs'
+import { buildConfig, usesCsi } from '../lib/prepare.mjs'
 
 const HERE = import.meta.dirname
 const FIXTURE = path.join(HERE, 'fixture')
@@ -386,6 +386,85 @@ check(
     splicedReadsFirst: true,
   },
 )
+
+// ---- an assembly taken from a hub ----------------------------------------
+
+// A hub config names its own files relative to itself, and the portal's
+// config.json is published somewhere else entirely, so every URI in it has to
+// come out absolute. chromSizes is one of them and is not spelled `uri`.
+const HUB = {
+  name: 'hg38',
+  sequence: {
+    type: 'ReferenceSequenceTrack',
+    trackId: 'hg38-ref',
+    adapter: {
+      type: 'TwoBitAdapter',
+      uri: 'https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.2bit',
+      chromSizes: 'https://jbrowse.org/ucsc/hg38/hg38.chrom.sizes',
+    },
+  },
+  refNameAliases: {
+    adapter: {
+      type: 'RefNameAliasAdapter',
+      uri: 'https://jbrowse.org/ucsc/hg38/hg38.chromAlias.txt',
+    },
+  },
+}
+const fromHub = buildConfig({
+  assembly: 'hg38',
+  hubAssembly: structuredClone(HUB),
+  predictionRef: 'prediction.gff.gz',
+  referenceRef: 'https://jbrowse.org/ucsc/hg38/gencode.v49.annotation.sorted.gff3.gz',
+  referenceCsi: true,
+  rnaRefs: [],
+})
+check(
+  'a hub assembly goes in whole rather than being rebuilt',
+  fromHub.assemblies[0],
+  HUB,
+)
+// --aliases exists for the assemblies this tool builds itself. A hub already
+// carries the right table, and overwriting it with the caller's would be the
+// one thing worse than not having one.
+check(
+  'and its own alias table survives an --aliases beside it',
+  buildConfig({
+    assembly: 'hg38',
+    hubAssembly: structuredClone(HUB),
+    aliasesRef: 'someone_elses_aliases.txt',
+    predictionRef: 'prediction.gff.gz',
+    rnaRefs: [],
+  }).assemblies[0].refNameAliases,
+  HUB.refNameAliases,
+)
+// `uri` alone means `.tbi` to JBrowse, so a CSI-indexed reference loads as a
+// track that fetches a 404 and draws nothing.
+check(
+  'a CSI-indexed reference says so',
+  fromHub.tracks.find(t => t.trackId === 'reference_annotation').adapter,
+  {
+    type: 'Gff3TabixAdapter',
+    uri: 'https://jbrowse.org/ucsc/hg38/gencode.v49.annotation.sorted.gff3.gz',
+    csi: true,
+  },
+)
+check(
+  'and a tbi-indexed one stays the short spelling',
+  fromHub.tracks.find(t => t.trackId === 'prediction').adapter,
+  { type: 'Gff3TabixAdapter', uri: 'data/prediction.gff.gz' },
+)
+
+const idxDir = fs.mkdtempSync(path.join(os.tmpdir(), 'portal-index-'))
+fs.writeFileSync(path.join(idxDir, 'tbi.gff.gz'), '')
+fs.writeFileSync(path.join(idxDir, 'tbi.gff.gz.tbi'), '')
+fs.writeFileSync(path.join(idxDir, 'csi.gff.gz'), '')
+fs.writeFileSync(path.join(idxDir, 'csi.gff.gz.csi'), '')
+check(
+  'a local file is read off the index beside it',
+  [await usesCsi('tbi.gff.gz', idxDir), await usesCsi('csi.gff.gz', idxDir)],
+  [false, true],
+)
+fs.rmSync(idxDir, { recursive: true, force: true })
 
 // ---- a flaky capture gets a second go -----------------------------------
 

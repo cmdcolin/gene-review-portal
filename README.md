@@ -256,6 +256,14 @@ fixture missed the bug for as long as it did.
   annotation says `chr22` and the FASTA says `22`. Without it the assembly loads,
   both tracks open, and every capture fails with "unknown reference sequence
   name", which reads like a bad locus rather than a mismatched config.
+- `--assembly-from <url>` takes the assembly from a published JBrowse config
+  rather than building one out of `--fasta` and `--aliases`. That is the whole
+  of [genomes.jbrowse.org](https://genomes.jbrowse.org) — `jbrowse.org/ucsc/hg38/config.json`
+  and the ~50,000 GenArk hubs beside it — and what arrives with it is the
+  sequence UCSC actually distributes for that build, its `chrom.sizes`, the
+  chromAlias table already wired as `refNameAliases`, and the cytobands. A
+  portal built the other way is pinned to whichever FASTA somebody uploaded
+  once; this one tracks the hub.
 - `--inline-images` embeds the captures, so the portal is one file.
 - Without `--with-app` the links point at `jbrowse.org/code/jb2/latest`, which
   **cannot read a config on your laptop** — that mode is for data already

@@ -26,6 +26,7 @@ import {
 } from '../lib/measurements.mjs'
 import { renderPage } from '../lib/page.mjs'
 import {
+  assemblyFromHub,
   buildConfig,
   checkTools,
   fetchRegions,
@@ -34,6 +35,7 @@ import {
   prepareBed,
   prepareFasta,
   prepareGff,
+  usesCsi,
 } from '../lib/prepare.mjs'
 import { serveStatic } from '../lib/serve.mjs'
 
@@ -81,6 +83,12 @@ OPTIONAL
   --prediction-name <s>  track label for the prediction (default: its filename)
   --reference-name <s>   track label for the reference (default: its filename)
   --assembly <name>      assembly name in the config (default: the fasta's basename)
+  --assembly-from <url>  take the assembly from a published JBrowse config
+                         instead of building one — \`https://jbrowse.org/ucsc/hg38/config.json\`
+                         and the ~50,000 GenArk hubs beside it. Its sequence,
+                         chrom.sizes and refName aliases arrive already wired,
+                         which is the whole of --fasta and --aliases. Replaces
+                         --fasta.
   --region <refName>     restrict the scan to one contig, repeatable
   --max <n>              candidates kept per class (default 12)
   --title <text>         page heading
@@ -139,6 +147,7 @@ const TEXT = {
   '--reference': 'reference',
   '--fasta': 'fasta',
   '--assembly': 'assembly',
+  '--assembly-from': 'assemblyFrom',
   '--out': 'out',
   '--title': 'title',
   '--instance': 'instance',
@@ -223,9 +232,13 @@ try {
   console.error(e.message)
   process.exit(1)
 }
-if (opts.help || !opts.prediction || !opts.fasta || !opts.out) {
+if (opts.help || !opts.prediction || !(opts.fasta || opts.assemblyFrom) || !opts.out) {
   usage()
   process.exit(opts.help ? 0 : 1)
+}
+if (opts.fasta && opts.assemblyFrom) {
+  console.error('--fasta and --assembly-from both say what the assembly is')
+  process.exit(1)
 }
 if (opts.appDir && opts.appBranch) {
   console.error('--app-dir and --app-branch both say where JBrowse comes from')
@@ -254,10 +267,17 @@ for (const f of [
 const out = path.resolve(opts.out)
 const dataDir = path.join(out, 'data')
 const imgDir = path.join(out, 'img')
+const hubAssembly = opts.assemblyFrom
+  ? await assemblyFromHub(opts.assemblyFrom)
+  : null
 const assembly =
   opts.assembly ||
+  hubAssembly?.name ||
   path.basename(opts.fasta).replace(/\.(fa|fasta)(\.gz)?$/i, '') ||
   'genome'
+if (hubAssembly) {
+  hubAssembly.name = assembly
+}
 const portalId = `${assembly}-${path.basename(opts.prediction).replaceAll(/\W+/g, '_')}`
 
 function copyAlongside(input, dir) {
@@ -272,7 +292,7 @@ checkTools()
 fs.mkdirSync(dataDir, { recursive: true })
 
 console.log('preparing data')
-const fastaRef = prepareFasta(opts.fasta, dataDir, assembly)
+const fastaRef = hubAssembly ? null : prepareFasta(opts.fasta, dataDir, assembly)
 const predictionRef = prepareGff(opts.prediction, dataDir, 'prediction')
 const referenceRef = opts.reference
   ? prepareGff(opts.reference, dataDir, 'reference')
@@ -325,11 +345,14 @@ const conflictsRef = bed ? prepareBed(bed, dataDir, 'conflicts') : null
 
 const config = buildConfig({
   assembly,
+  hubAssembly,
   fastaRef,
   aliasesRef,
   predictionRef,
+  predictionCsi: await usesCsi(predictionRef, dataDir),
   conflictsRef,
   referenceRef,
+  referenceCsi: referenceRef ? await usesCsi(referenceRef, dataDir) : false,
   rnaRefs,
   rnaNames: opts.rnaseqName,
   rnaHeight: opts.rnaseqHeight,
