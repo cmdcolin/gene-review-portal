@@ -1,0 +1,13 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      '@jbrowse/capture':
+        specifier: link:../jbrowse-components/products/jbrowse-capture
+        version: link:../jbrowse-components/products/jbrowse-capture

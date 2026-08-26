@@ -1,0 +1,34 @@
+{
+  "name": "gene-review-portal",
+  "version": "0.1.0",
+  "description": "Turn a gene prediction, a reference annotation and a genome into a static review portal: the models that disagree, each with a JBrowse capture and a link back into the app",
+  "keywords": [
+    "genomics",
+    "gene-prediction",
+    "annotation",
+    "jbrowse",
+    "gff3"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cmdcolin/gene-review-portal.git"
+  },
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "gene-review-portal": "./bin/make-portal.mjs"
+  },
+  "files": [
+    "bin",
+    "lib"
+  ],
+  "engines": {
+    "node": ">=23.6"
+  },
+  "scripts": {
+    "test": "node test/run.mjs"
+  },
+  "dependencies": {
+    "@jbrowse/capture": "link:../jbrowse-components/products/jbrowse-capture"
+  }
+}
