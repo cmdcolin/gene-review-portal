@@ -8,236 +8,105 @@
       rel="icon"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>&#129516;</text></svg>"
     />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
-    />
     <style>
+      /* Surfaces, text and borders are CSS system colors, so light and dark
+         both work with no palette and no media query — the browser maps
+         Canvas/Field/ButtonFace per scheme. Only the accents that carry meaning
+         are fixed: one colour per class, one per verdict. */
       :root {
-        --ground: #f4f6f8;
-        --surface: #fff;
-        --surface-2: #eaeef4;
-        --ink: #131820;
-        --muted: #5a6474;
-        --line: #dde2ea;
-        --line-strong: #c3cbd8;
-        --accent: #34457f;
-        --accent-soft: #e7ebf7;
-        --keep: #2c7a55;
-        --keep-soft: #e2f2ea;
-        --reject: #b04238;
-        --reject-soft: #fbe8e6;
-        --edit: #96681a;
-        --edit-soft: #f9eed8;
-        --on-cls: #fff;
-        --c-merge: #6d28d9;
-        --c-merge-soft: #f3e8ff;
-        --c-structure-conflict: #b45309;
-        --c-structure-conflict-soft: #ffedd5;
-        --c-novel-locus: #0f766e;
-        --c-novel-locus-soft: #ccfbf1;
-        --c-novel-coding: #1d4ed8;
-        --c-novel-coding-soft: #dbeafe;
-        --shadow:
-          0 1px 2px rgba(19, 24, 32, 0.06),
-          0 8px 24px -12px rgba(19, 24, 32, 0.18);
-      }
-      @media (prefers-color-scheme: dark) {
-        :root:not([data-theme='light']) {
-          --ground: #10131a;
-          --surface: #181d26;
-          --surface-2: #212733;
-          --ink: #e6eaf2;
-          --muted: #98a2b3;
-          --line: #2b3240;
-          --line-strong: #3a4356;
-          --accent: #93a6ea;
-          --accent-soft: #222a44;
-          --keep: #62bd91;
-          --keep-soft: #17301f;
-          --reject: #e88b80;
-          --reject-soft: #351c1c;
-          --edit: #d9ad5c;
-          --edit-soft: #32270f;
-          --on-cls: #10131a;
-          --c-merge: #c4b5fd;
-          --c-merge-soft: #2a2148;
-          --c-structure-conflict: #f0b27a;
-          --c-structure-conflict-soft: #3a2a14;
-          --c-novel-locus: #5eead4;
-          --c-novel-locus-soft: #10312e;
-          --c-novel-coding: #93b4fc;
-          --c-novel-coding-soft: #1b2a4d;
-          --shadow:
-            0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
-        }
-      }
-      :root[data-theme='dark'] {
-        --ground: #10131a;
-        --surface: #181d26;
-        --surface-2: #212733;
-        --ink: #e6eaf2;
-        --muted: #98a2b3;
-        --line: #2b3240;
-        --line-strong: #3a4356;
-        --accent: #93a6ea;
-        --accent-soft: #222a44;
-        --keep: #62bd91;
-        --keep-soft: #17301f;
-        --reject: #e88b80;
-        --reject-soft: #351c1c;
-        --edit: #d9ad5c;
-        --edit-soft: #32270f;
-        --on-cls: #10131a;
-        --c-merge: #c4b5fd;
-        --c-merge-soft: #2a2148;
-        --c-structure-conflict: #f0b27a;
-        --c-structure-conflict-soft: #3a2a14;
-        --c-novel-locus: #5eead4;
-        --c-novel-locus-soft: #10312e;
-        --c-novel-coding: #93b4fc;
-        --c-novel-coding-soft: #1b2a4d;
-        --shadow:
-          0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+        color-scheme: light dark;
+        /* light-dark() rather than a media query, for the same reason the rest
+           of the sheet is system colors: one declaration, both schemes. An
+           accent picked for white is unreadable on near-black and the other way
+           round, and these are borders and text, not decoration. */
+        --accent: light-dark(#2563eb, #7aa2f7);
+        --keep: light-dark(#16a34a, #4ade80);
+        --edit: light-dark(#b45309, #fbbf24);
+        --reject: light-dark(#dc2626, #f87171);
+        /* what reads on top of an accent, once the accent is the background */
+        --on-accent: light-dark(#fff, #10131a);
       }
       [data-cls='merge'] {
-        --cls: var(--c-merge);
-        --cls-soft: var(--c-merge-soft);
+        --cls: light-dark(#7c3aed, #c4b5fd);
       }
       [data-cls='structure-conflict'] {
-        --cls: var(--c-structure-conflict);
-        --cls-soft: var(--c-structure-conflict-soft);
+        --cls: light-dark(#b45309, #fbbf24);
       }
       [data-cls='novel-locus'] {
-        --cls: var(--c-novel-locus);
-        --cls-soft: var(--c-novel-locus-soft);
+        --cls: light-dark(#0d9488, #5eead4);
       }
       [data-cls='novel-coding'] {
-        --cls: var(--c-novel-coding);
-        --cls-soft: var(--c-novel-coding-soft);
+        --cls: light-dark(#2563eb, #93b4fc);
       }
       * {
         box-sizing: border-box;
       }
       body {
         margin: 0;
-        background: var(--ground);
-        color: var(--ink);
-        font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-        font-size: 15px;
-        line-height: 1.55;
-        -webkit-font-smoothing: antialiased;
-      }
-      .wrap {
-        max-width: 1180px;
-        margin: 0 auto;
-        padding: 40px 24px 80px;
-        display: flex;
-        flex-direction: column;
-        gap: 24px;
-      }
-      h1 {
-        font-family: 'Familjen Grotesk', sans-serif;
-        font-size: 34px;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        line-height: 1.15;
-        margin: 0;
-        text-wrap: balance;
-      }
-      .eyebrow {
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 11.5px;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: var(--muted);
-      }
-      .lede {
-        max-width: 66ch;
-        color: var(--muted);
-        margin: 0;
-      }
-      .lede strong {
-        color: var(--ink);
-        font-weight: 600;
-      }
-      .masthead {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
+        background: Canvas;
+        color: CanvasText;
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
       }
 
-      .controls {
+      /* Full width and stuck to the top of the viewport, not a floating panel
+         inside the column: every control on the page is in here, and a reviewer
+         forty cards down needs all of them without scrolling back. */
+      header {
         position: sticky;
         top: 0;
         z-index: 10;
-        background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: 10px;
-        box-shadow: var(--shadow);
-        padding: 14px 16px;
+        background: Canvas;
+        border-bottom: 1px solid ButtonBorder;
+        padding: 10px 20px;
         display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-      .row1 {
-        display: flex;
-        flex-wrap: wrap;
+        gap: 8px 16px;
         align-items: center;
-        gap: 16px 22px;
+        flex-wrap: wrap;
       }
-      .stat {
+      header h1 {
+        font-size: 16px;
+        margin: 0;
+      }
+      .eyebrow {
+        font-size: 12px;
+        color: GrayText;
+      }
+      .counts {
+        margin-left: auto;
         display: flex;
-        flex-direction: column;
-        gap: 1px;
+        gap: 14px;
+        font-size: 13px;
+        color: GrayText;
       }
-      .stat .n {
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 20px;
-        font-weight: 500;
+      .counts b {
+        color: CanvasText;
         font-variant-numeric: tabular-nums;
-        line-height: 1.1;
-      }
-      .stat .k {
-        font-size: 11.5px;
-        color: var(--muted);
-      }
-      .stat.agrees .n {
-        color: var(--keep);
-      }
-      .stat.flagged .n {
-        color: var(--edit);
-      }
-      .rule {
-        width: 1px;
-        align-self: stretch;
-        background: var(--line);
       }
       .progress {
-        flex: 1;
-        min-width: 180px;
+        width: 230px;
         display: flex;
         flex-direction: column;
-        gap: 5px;
+        gap: 3px;
       }
       .progress .r {
         display: flex;
         justify-content: space-between;
+        gap: 10px;
         font-size: 12px;
-        color: var(--muted);
+        color: GrayText;
       }
       .bar {
         height: 6px;
-        border-radius: 3px;
-        background: var(--surface-2);
-        overflow: hidden;
         display: flex;
+        border: 1px solid ButtonBorder;
+        border-radius: 3px;
+        background: ButtonFace;
+        overflow: hidden;
       }
       .bar span {
         height: 100%;
-        transition: width 0.25s ease;
       }
       .b-keep {
         background: var(--keep);
@@ -249,214 +118,246 @@
         background: var(--reject);
       }
 
-      .row2 {
+      /* the filters and the actions, on their own line under the title row */
+      .hrow {
+        flex-basis: 100%;
         display: flex;
-        flex-wrap: wrap;
         gap: 8px;
         align-items: center;
+        flex-wrap: wrap;
       }
       .filters {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
       }
-      .sep {
-        width: 1px;
-        height: 22px;
-        background: var(--line);
-        margin: 0 4px;
+      .actions {
+        margin-left: auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
       }
+
       button,
       select,
       input[type='search'] {
         font: inherit;
         font-size: 13px;
-        border-radius: 7px;
-        border: 1px solid var(--line-strong);
-        background: var(--surface);
-        color: var(--ink);
-        padding: 6px 11px;
-        transition:
-          background 0.12s,
-          border-color 0.12s,
-          color 0.12s;
+        padding: 5px 10px;
+        border: 1px solid ButtonBorder;
+        border-radius: 6px;
+        background: Canvas;
+        color: CanvasText;
       }
-      button {
-        cursor: pointer;
-      }
-      button:hover {
-        background: var(--surface-2);
-      }
-      button:focus-visible,
-      select:focus-visible,
-      input:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: 2px;
-      }
-      button[disabled] {
-        opacity: 0.45;
-        cursor: not-allowed;
-      }
-      .filters button {
-        background: var(--cls, var(--accent));
-        border-color: transparent;
-        color: var(--on-cls);
-        font-weight: 600;
-      }
-      .filters button:hover {
-        background: var(--cls, var(--accent));
-        filter: brightness(1.1);
-      }
-      .filters button[aria-pressed='true'] {
-        box-shadow:
-          0 0 0 2px var(--surface),
-          0 0 0 4px var(--cls, var(--accent));
-      }
-      .filters .count {
-        font-family: 'IBM Plex Mono', monospace;
-        opacity: 0.8;
-        margin-left: 7px;
-        font-variant-numeric: tabular-nums;
+      select,
+      input[type='search'] {
+        background: Field;
+        color: FieldText;
       }
       input[type='search'] {
         min-width: 190px;
       }
-      .spacer {
-        margin-left: auto;
+      button {
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        color: GrayText;
+      }
+      .filters button[aria-pressed='true'] {
+        background: var(--cls, var(--accent));
+        border-color: var(--cls, var(--accent));
+        color: var(--on-accent);
+      }
+      /* 9 → 10 → 100 all draw in the same box, so a verdict does not reflow the
+         row and move every card on the page */
+      .filters .count {
+        display: inline-block;
+        min-width: 3ch;
+        text-align: right;
+        margin-left: 6px;
+        opacity: 0.7;
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+      }
+      .msg {
+        font-size: 13px;
+        color: GrayText;
+      }
+
+      /* `hidden` is a UA rule, and any author `display` beats it whatever the
+         specificity — without this the legend shows whether or not it is open */
+      .keys {
+        flex-basis: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 20px;
+        align-items: center;
+        font-size: 12px;
+        color: GrayText;
+      }
+      .keys[hidden] {
+        display: none;
+      }
+      .keys kbd {
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+        color: CanvasText;
+        background: ButtonFace;
+        border: 1px solid ButtonBorder;
+        border-radius: 4px;
+        padding: 0 5px;
+        margin-right: 3px;
+      }
+
+      main {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px 20px 40vh;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+      .lede {
+        max-width: 78ch;
+        margin: 0;
+        color: GrayText;
+      }
+      .lede strong {
+        color: CanvasText;
       }
 
       .cards {
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 18px;
       }
+      /* The class stripe is always 5px and only its COLOUR says which class: a
+         border is layout, so growing one on a verdict would reflow the card. */
       .card {
-        background: var(--surface);
-        border: 1px solid var(--verdict, var(--line));
-        border-left: 5px solid var(--cls, var(--verdict, var(--line)));
-        border-radius: 10px;
+        border: 1px solid var(--verdict, ButtonBorder);
+        border-left: 5px solid var(--cls, ButtonBorder);
+        border-radius: 8px;
         overflow: hidden;
-        box-shadow: var(--shadow);
       }
       .card[data-verdict='keep'] {
         --verdict: var(--keep);
       }
-      .card[data-verdict='reject'] {
-        --verdict: var(--reject);
-      }
       .card[data-verdict='edit'] {
         --verdict: var(--edit);
       }
+      .card[data-verdict='reject'] {
+        --verdict: var(--reject);
+      }
+      .card[data-current='true'] {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
       .card-head {
-        background: var(--cls-soft);
         display: flex;
         flex-wrap: wrap;
-        gap: 9px 15px;
+        gap: 6px 14px;
         align-items: baseline;
-        padding: 14px 18px;
-        border-bottom: 1px solid var(--line);
+        padding: 10px 14px;
+        border-bottom: 1px solid ButtonBorder;
       }
       .chip {
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 11px;
-        font-weight: 500;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        padding: 3px 8px;
-        border-radius: 5px;
+        padding: 1px 8px;
+        border-radius: 999px;
         background: var(--cls, var(--accent));
-        color: var(--on-cls);
+        color: var(--on-accent);
+        font-size: 12px;
+        font-weight: 500;
         white-space: nowrap;
       }
       .model {
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 14px;
-        font-weight: 500;
+        font-family: ui-monospace, monospace;
+        font-size: 13px;
       }
       .genes {
         font-weight: 600;
       }
       .meta {
         margin-left: auto;
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 12.5px;
-        color: var(--muted);
+        font-family: ui-monospace, monospace;
+        font-size: 12px;
+        color: GrayText;
         font-variant-numeric: tabular-nums;
       }
       .why {
-        padding: 12px 18px 0;
-        color: var(--muted);
-        font-size: 14px;
+        padding: 10px 14px 0;
+        color: GrayText;
         max-width: 78ch;
       }
       .detail {
-        padding: 6px 18px 0;
-        font-size: 13.5px;
+        padding: 4px 14px 0;
+        font-size: 13px;
         max-width: 78ch;
-        color: var(--ink);
-      }
-      .detail b {
-        color: var(--cls, var(--accent));
-        font-weight: 600;
       }
       .detail .j {
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 12.5px;
+        font-family: ui-monospace, monospace;
+        font-size: 12px;
+        color: GrayText;
       }
       .shot {
         display: block;
         width: 100%;
         height: auto;
-        border-top: 1px solid var(--line);
-        border-bottom: 1px solid var(--line);
-        margin-top: 13px;
+        margin-top: 10px;
+        border-top: 1px solid ButtonBorder;
+        border-bottom: 1px solid ButtonBorder;
         background: #fff;
       }
       .missing {
-        margin: 13px 0 0;
-        padding: 26px 18px;
-        border-top: 1px solid var(--line);
-        border-bottom: 1px solid var(--line);
-        background: var(--surface-2);
-        color: var(--muted);
-        font-size: 13.5px;
+        margin-top: 10px;
+        padding: 20px 14px;
+        border-top: 1px solid ButtonBorder;
+        border-bottom: 1px solid ButtonBorder;
+        color: GrayText;
+        font-size: 13px;
       }
       .card-foot {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px 14px;
+        gap: 8px 14px;
         align-items: center;
-        padding: 13px 18px;
+        padding: 10px 14px;
       }
       .verdicts {
         display: flex;
-        gap: 7px;
+        gap: 6px;
       }
-      .verdicts button[aria-pressed='true'][data-v='keep'] {
-        background: var(--keep-soft);
+      .verdicts button[data-v='keep'] {
         border-color: var(--keep);
         color: var(--keep);
-        font-weight: 600;
       }
-      .verdicts button[aria-pressed='true'][data-v='edit'] {
-        background: var(--edit-soft);
+      .verdicts button[data-v='edit'] {
         border-color: var(--edit);
         color: var(--edit);
-        font-weight: 600;
       }
-      .verdicts button[aria-pressed='true'][data-v='reject'] {
-        background: var(--reject-soft);
+      .verdicts button[data-v='reject'] {
         border-color: var(--reject);
         color: var(--reject);
-        font-weight: 600;
+      }
+      .verdicts button[aria-pressed='true'] {
+        color: var(--on-accent);
+      }
+      .verdicts button[aria-pressed='true'][data-v='keep'] {
+        background: var(--keep);
+      }
+      .verdicts button[aria-pressed='true'][data-v='edit'] {
+        background: var(--edit);
+      }
+      .verdicts button[aria-pressed='true'][data-v='reject'] {
+        background: var(--reject);
       }
       .next {
         font-size: 13px;
-        color: var(--muted);
+        color: GrayText;
       }
       .next b {
-        color: var(--ink);
-        font-weight: 600;
+        color: CanvasText;
       }
       .links {
         margin-left: auto;
@@ -465,107 +366,45 @@
       }
       a.live {
         font-size: 13px;
-        font-weight: 500;
-        color: var(--accent);
+        color: LinkText;
         text-decoration: none;
-        border: 1px solid var(--accent);
-        border-radius: 7px;
-        padding: 6px 13px;
+        border: 1px solid ButtonBorder;
+        border-radius: 6px;
+        padding: 5px 12px;
         white-space: nowrap;
       }
       a.live.apollo {
-        background: var(--accent);
-        color: var(--on-cls);
-      }
-      a.live.apollo:hover {
-        filter: brightness(1.15);
-      }
-      a.live:hover {
-        background: var(--accent-soft);
-      }
-      a.live:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: 2px;
-      }
-      .card[data-current='true'] {
-        outline: 2px solid var(--accent);
-        outline-offset: 3px;
-      }
-      .msg {
-        font-size: 12.5px;
-        color: var(--muted);
-      }
-      .actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-      }
-      .keys {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px 20px;
-        align-items: center;
-        font-size: 12.5px;
-        color: var(--muted);
-        border-top: 1px solid var(--line);
-        padding-top: 11px;
-      }
-      .keys kbd {
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 11px;
-        color: var(--ink);
-        background: var(--surface-2);
-        border: 1px solid var(--line-strong);
-        border-bottom-width: 2px;
-        border-radius: 4px;
-        padding: 1px 6px;
-        margin-right: 4px;
+        border-color: var(--accent);
       }
       .empty {
-        padding: 44px 18px;
-        text-align: center;
-        color: var(--muted);
-        background: var(--surface);
-        border: 1px dashed var(--line-strong);
-        border-radius: 10px;
-      }
-      .note {
-        font-size: 13px;
-        color: var(--muted);
-        background: var(--surface-2);
-        border-radius: 8px;
-        padding: 10px 14px;
+        color: GrayText;
+        align-self: flex-start;
       }
       footer {
-        border-top: 1px solid var(--line);
-        padding-top: 20px;
-        color: var(--muted);
-        font-size: 13.5px;
+        border-top: 1px solid ButtonBorder;
+        padding-top: 16px;
+        color: GrayText;
+        font-size: 13px;
         display: flex;
         flex-direction: column;
-        gap: 7px;
+        gap: 6px;
         max-width: 78ch;
       }
       footer code {
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 12.5px;
-        color: var(--ink);
+        font-family: ui-monospace, monospace;
+        font-size: 12px;
+        color: CanvasText;
       }
-      @media (prefers-reduced-motion: reduce) {
-        * {
-          transition: none !important;
-        }
-      }
-      @media (max-width: 640px) {
-        h1 {
-          font-size: 27px;
-        }
-        .meta {
-          margin-left: 0;
-          width: 100%;
-        }
+      @media (max-width: 700px) {
+        .counts,
+        .progress,
+        .actions,
+        .meta,
         .links {
           margin-left: 0;
+        }
+        .progress {
+          width: 100%;
         }
       }
     </style>

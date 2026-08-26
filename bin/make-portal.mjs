@@ -564,7 +564,7 @@ const data = {
           'the annotation editor, where <b>Split into two models</b> is a real action rather than a note.</div>'
         : '<div>The triage is the browser’s half. The edit belongs in an annotation editor — ' +
           '<b>Split into two models</b> is not a viewer action.</div>'
-    }<div>Verdicts are stored in this browser only. <b>Export decisions</b> writes them out as TSV, and <b>Import</b> reads one back.</div>`,
+    }<div>Verdicts are stored in this browser only. <b>Export</b> writes them out as TSV, and <b>Import</b> reads one back.</div>`,
   total,
   agrees,
   flagged,

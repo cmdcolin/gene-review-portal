@@ -39,6 +39,11 @@ function phrase(c) {
   if (c.kind === 'shifted') {
     return `${at} shifted ${num(c.shift)} bp`
   }
+  // Both ends are splice sites the reference uses, so nothing moved — the model
+  // pairs them into an isoform the reference does not carry.
+  if (c.kind === 'pairing') {
+    return `${at} pairs two reference splice sites no isoform pairs`
+  }
   return `${at} matches no reference intron`
 }
 
@@ -286,6 +291,7 @@ export function App({ data }) {
   const wantScroll = useRef(false)
   const fileInput = useRef(null)
   const searchInput = useRef(null)
+  const msgTimer = useRef(undefined)
 
   useEffect(() => {
     try {
@@ -375,11 +381,9 @@ export function App({ data }) {
   )
 
   const toggleKeys = useCallback(() => {
-    setKeysOpen(prev => {
-      persist(verdicts, !prev)
-      return !prev
-    })
-  }, [persist, verdicts])
+    setKeysOpen(!keysOpen)
+    persist(verdicts, !keysOpen)
+  }, [keysOpen, persist, verdicts])
 
   const move = useCallback(
     step => {
@@ -470,14 +474,14 @@ export function App({ data }) {
     setCursor(visible.length ? visible[0].id : null)
   }, [visible, cursor])
 
+  // One timer rather than one per message: two messages inside five seconds and
+  // the first one's timer wipes the second.
   const say = useCallback(text => {
     setMsg(text)
-    const t = setTimeout(() => {
+    clearTimeout(msgTimer.current)
+    msgTimer.current = setTimeout(() => {
       setMsg('')
     }, 5000)
-    return () => {
-      clearTimeout(t)
-    }
   }, [])
 
   function exportTsv() {
@@ -503,18 +507,16 @@ export function App({ data }) {
         say(res.error)
         return
       }
-      setVerdicts(prev => {
-        const next = { ...prev }
-        for (const [id, v] of Object.entries(res.changes)) {
-          if (v === null) {
-            delete next[id]
-          } else {
-            next[id] = v
-          }
+      const next = { ...verdicts }
+      for (const [id, v] of Object.entries(res.changes)) {
+        if (v === null) {
+          delete next[id]
+        } else {
+          next[id] = v
         }
-        persist(next, keysOpen)
-        return next
-      })
+      }
+      setVerdicts(next)
+      persist(next, keysOpen)
       say(
         `${res.applied} verdict${res.applied === 1 ? '' : 's'} read in${
           res.unknown
@@ -543,53 +545,86 @@ export function App({ data }) {
   const pct = x => `${data.cards.length ? (x / data.cards.length) * 100 : 0}%`
 
   return (
-    <div className="wrap">
-      <div className="masthead">
-        <div className="eyebrow">{data.eyebrow}</div>
+    <>
+      <header>
         <h1>{data.title}</h1>
-        {/* lede and footer are prose make-portal composes itself, with counts
-            interpolated into it and nothing off the annotation files. */}
-        {/* eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml */}
-        <p className="lede" dangerouslySetInnerHTML={{ __html: data.lede }} />
-      </div>
-
-      <div className="controls">
-        <div className="row1">
-          <div className="stat">
-            <span className="n">{data.total}</span>
-            <span className="k">models predicted</span>
+        <span className="eyebrow">{data.eyebrow}</span>
+        <span className="counts">
+          <span>
+            <b>{data.total}</b> models
+          </span>
+          <span>
+            <b>{data.agrees}</b> agree
+          </span>
+          <span>
+            <b>{data.flagged}</b> flagged
+          </span>
+        </span>
+        <div className="progress">
+          <div className="r">
+            <span id="done">
+              {done} of {data.cards.length} judged
+            </span>
+            <span id="tally">
+              {counts.keep} keep · {counts.edit} edit · {counts.reject} reject
+            </span>
           </div>
-          <div className="rule" />
-          <div className="stat agrees">
-            <span className="n">{data.agrees}</span>
-            <span className="k">agree with reference</span>
-          </div>
-          <div className="stat flagged">
-            <span className="n">{data.flagged}</span>
-            <span className="k">flagged</span>
-          </div>
-          <div className="rule" />
-          <div className="progress">
-            <div className="r">
-              <span id="done">
-                {done} of {data.cards.length} judged
-              </span>
-              <span id="tally">
-                {counts.keep} keep · {counts.edit} edit · {counts.reject} reject
-              </span>
-            </div>
-            <div className="bar">
-              <span className="b-keep" style={{ width: pct(counts.keep) }} />
-              <span className="b-edit" style={{ width: pct(counts.edit) }} />
-              <span
-                className="b-reject"
-                style={{ width: pct(counts.reject) }}
-              />
-            </div>
+          <div className="bar">
+            <span className="b-keep" style={{ width: pct(counts.keep) }} />
+            <span className="b-edit" style={{ width: pct(counts.edit) }} />
+            <span className="b-reject" style={{ width: pct(counts.reject) }} />
           </div>
         </div>
+        <div className="actions">
+          <button
+            id="keysbtn"
+            type="button"
+            aria-expanded={keysOpen}
+            onClick={toggleKeys}
+          >
+            Keys
+          </button>
+          <button
+            id="import"
+            type="button"
+            onClick={() => fileInput.current?.click()}
+          >
+            Import
+          </button>
+          <input
+            type="file"
+            id="importfile"
+            ref={fileInput}
+            accept=".tsv,.txt,text/tab-separated-values"
+            hidden
+            onChange={e => {
+              const file = e.target.files?.[0]
+              if (file) {
+                importTsv(file)
+              }
+              e.target.value = ''
+            }}
+          />
+          <button id="export" type="button" onClick={exportTsv}>
+            Export
+          </button>
+          <button
+            id="reset"
+            type="button"
+            disabled={!done}
+            onClick={() => {
+              if (!confirm('Clear every verdict on this portal?')) {
+                return
+              }
+              setVerdicts({})
+              persist({}, keysOpen)
+            }}
+          >
+            Reset
+          </button>
+        </div>
 
-        <div className="row2">
+        <div className="hrow">
           <div className="filters">
             {chips.map(ch => (
               <button
@@ -606,7 +641,6 @@ export function App({ data }) {
               </button>
             ))}
           </div>
-          <span className="sep" />
           <select
             id="vf"
             aria-label="Filter by verdict"
@@ -634,55 +668,6 @@ export function App({ data }) {
           <span id="msg" className="msg" role="status">
             {msg}
           </span>
-          <span className="spacer" />
-          <div className="actions">
-            <button
-              id="keysbtn"
-              type="button"
-              aria-expanded={keysOpen}
-              onClick={toggleKeys}
-            >
-              Keys
-            </button>
-            <button
-              id="import"
-              type="button"
-              onClick={() => fileInput.current?.click()}
-            >
-              Import
-            </button>
-            <input
-              type="file"
-              id="importfile"
-              ref={fileInput}
-              accept=".tsv,.txt,text/tab-separated-values"
-              hidden
-              onChange={e => {
-                const file = e.target.files?.[0]
-                if (file) {
-                  importTsv(file)
-                }
-                e.target.value = ''
-              }}
-            />
-            <button id="export" type="button" onClick={exportTsv}>
-              Export decisions
-            </button>
-            <button
-              id="reset"
-              type="button"
-              disabled={!done}
-              onClick={() => {
-                if (!confirm('Clear every verdict on this portal?')) {
-                  return
-                }
-                setVerdicts({})
-                persist({}, keysOpen)
-              }}
-            >
-              Reset
-            </button>
-          </div>
         </div>
 
         <div className="keys" id="keys" hidden={!keysOpen}>
@@ -703,29 +688,36 @@ export function App({ data }) {
             <kbd>?</kbd> these keys
           </span>
         </div>
-      </div>
+      </header>
 
-      <div className="cards" id="cards">
-        {visible.length ? (
-          visible.map(c => (
-            <Card
-              key={c.id}
-              card={c}
-              meta={data.classes[c.cls]}
-              verdict={verdicts[c.id] || ''}
-              current={c.id === cursor}
-              onVerdict={setVerdict}
-              onPick={setCursor}
-              bind={bind}
-            />
-          ))
-        ) : (
-          <div className="empty">No models match these filters.</div>
-        )}
-      </div>
+      <main>
+        {/* lede and footer are prose make-portal composes itself, with counts
+            interpolated into it and nothing off the annotation files. */}
+        {/* eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml */}
+        <p className="lede" dangerouslySetInnerHTML={{ __html: data.lede }} />
 
-      {/* eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml */}
-      <footer dangerouslySetInnerHTML={{ __html: data.footer }} />
-    </div>
+        <div className="cards" id="cards">
+          {visible.length ? (
+            visible.map(c => (
+              <Card
+                key={c.id}
+                card={c}
+                meta={data.classes[c.cls]}
+                verdict={verdicts[c.id] || ''}
+                current={c.id === cursor}
+                onVerdict={setVerdict}
+                onPick={setCursor}
+                bind={bind}
+              />
+            ))
+          ) : (
+            <div className="empty">No models match these filters.</div>
+          )}
+        </div>
+
+        {/* eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml */}
+        <footer dangerouslySetInnerHTML={{ __html: data.footer }} />
+      </main>
+    </>
   )
 }

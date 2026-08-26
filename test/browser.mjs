@@ -111,6 +111,35 @@ const text = sel => page.$eval(sel, e => e.textContent)
 
 await check('the fixture builds a card per candidate', () => ids.length, 5)
 
+// The bar carries every control the reviewer needs and stays put while they
+// scroll; a column-width panel inside the content is neither.
+await check(
+  'the control bar spans the window and sticks to the top',
+  () =>
+    page.$eval('header', e => {
+      const r = e.getBoundingClientRect()
+      return [
+        getComputedStyle(e).position,
+        r.x,
+        r.width === document.documentElement.clientWidth,
+      ]
+    }),
+  ['sticky', 0, true],
+)
+// A portal is a directory somebody copies to a web server, or opens off a USB
+// stick. A page that reaches out for a font renders in a fallback there, and
+// tells whoever hosts the font who is reading it.
+await check(
+  'and the page asks the network for nothing',
+  () =>
+    page.evaluate(() =>
+      [...document.querySelectorAll('link[href],script[src],img[src]')]
+        .map(e => e.getAttribute('href') || e.getAttribute('src'))
+        .filter(u => /^(https?:)?\/\//.test(u)),
+    ),
+  [],
+)
+
 await page.keyboard.press('j')
 await check('j puts the cursor on the first card', current, ids[0])
 await page.keyboard.press('j')
@@ -262,19 +291,16 @@ await check(
 )
 await typeSearch('')
 
-await check(
-  'the key legend starts hidden',
-  () => page.$eval('#keys', e => e.hidden),
-  true,
-)
+// `hidden` is a UA rule, so any author `display` on .keys beats it whatever the
+// specificity — reading the IDL attribute alone says "hidden" about a legend
+// sitting open on the page, which is exactly what it did.
+const keysShown = () =>
+  page.$eval('#keys', e => getComputedStyle(e).display !== 'none')
+await check('the key legend starts hidden', keysShown, false)
 await page.keyboard.press('?')
-await check('? shows it', () => page.$eval('#keys', e => e.hidden), false)
+await check('? shows it', keysShown, true)
 await page.click('#keysbtn')
-await check(
-  'and the button puts it away',
-  () => page.$eval('#keys', e => e.hidden),
-  true,
-)
+await check('and the button puts it away', keysShown, false)
 
 const stored = () =>
   page.evaluate(() =>
