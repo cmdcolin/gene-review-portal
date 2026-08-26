@@ -1,10 +1,9 @@
 // Regenerate the fixture and check the classifier still puts every model in the
 // class the fixture was built to produce. Runs offline in about a second.
 import { execFileSync } from 'node:child_process'
-import path from 'node:path'
-
 import fs from 'node:fs'
 import os from 'node:os'
+import path from 'node:path'
 
 import {
   absoluteLink,
@@ -119,7 +118,9 @@ check(
   sessionFor({ refName: 'chr22', start: 10, end: 400 }, [], 'hg38').loc,
   'chr22:1-2400',
 )
-check('the session names the tracks it was given', session.views[0].tracks, ['prediction'])
+check('the session names the tracks it was given', session.views[0].tracks, [
+  'prediction',
+])
 
 check(
   'a bundled portal links relatively, config included',
@@ -128,7 +129,11 @@ check(
 )
 check(
   'a hosted portal links absolutely, config encoded',
-  absoluteLink(session, 'https://jbrowse.org/code/jb2/latest', 'https://example.org/config.json'),
+  absoluteLink(
+    session,
+    'https://jbrowse.org/code/jb2/latest',
+    'https://example.org/config.json',
+  ),
   `https://jbrowse.org/code/jb2/latest/?config=${encodeURIComponent('https://example.org/config.json')}&session=${encodeURIComponent(`spec-${JSON.stringify(session)}`)}`,
 )
 
@@ -137,19 +142,25 @@ check(
 // reaction that runs after the session parses. A link naming a track its config
 // does not itself declare fails to open at all, which is worse than arriving
 // with the layer switched off.
-const apolloUrl = apolloLink(sessionFor(candidate, [], 'hg38').session, 'https://apollo.example.org/')
+const apolloUrl = apolloLink(
+  sessionFor(candidate, [], 'hg38').session,
+  'https://apollo.example.org/',
+)
 check('an Apollo link carries no config', apolloUrl.includes('config='), false)
 check(
   'an Apollo link opens no track by default',
-  JSON.parse(decodeURIComponent(apolloUrl.split('session=spec-')[1])).views[0].tracks,
+  JSON.parse(decodeURIComponent(apolloUrl.split('session=spec-')[1])).views[0]
+    .tracks,
   [],
 )
 check(
   'an Apollo link opens the track it is given',
   JSON.parse(
     decodeURIComponent(
-      apolloLink(sessionFor(candidate, ['apollo_track_hg38'], 'hg38').session, 'https://apollo.example.org/')
-        .split('session=spec-')[1],
+      apolloLink(
+        sessionFor(candidate, ['apollo_track_hg38'], 'hg38').session,
+        'https://apollo.example.org/',
+      ).split('session=spec-')[1],
     ),
   ).views[0].tracks,
   ['apollo_track_hg38'],
@@ -167,15 +178,24 @@ const withEvidence = buildConfig({
   rnaHeight: 110,
 })
 const evidence = withEvidence.tracks.filter(t => t.type === 'AlignmentsTrack')
-check('an unnamed second evidence track keeps its number', evidence.map(t => t.name), ['brain', 'RNA-seq 2'])
+check(
+  'an unnamed second evidence track keeps its number',
+  evidence.map(t => t.name),
+  ['brain', 'RNA-seq 2'],
+)
 // The height rides in the track config because that is the only one of the
 // three routes a released JBrowse honours — displayDefaults postdates it, and a
 // session spec's tracks are ids rather than objects.
-check('each evidence lane carries its own display', evidence.map(t => t.displays[0].displayId), [
-  'rnaseq_1-LinearAlignmentsDisplay',
-  'rnaseq_2-LinearAlignmentsDisplay',
-])
-check('the lane height is the one asked for', evidence[0].displays[0].height, 110)
+check(
+  'each evidence lane carries its own display',
+  evidence.map(t => t.displays[0].displayId),
+  ['rnaseq_1-LinearAlignmentsDisplay', 'rnaseq_2-LinearAlignmentsDisplay'],
+)
+check(
+  'the lane height is the one asked for',
+  evidence[0].displays[0].height,
+  110,
+)
 check(
   'and an unasked-for height leaves the display alone',
   buildConfig({
@@ -213,7 +233,9 @@ fs.writeFileSync(process.argv[process.argv.indexOf('-o') + 1], 'png')
 }
 
 const captureArgs = {
-  candidates: [{ id: 'g1.t1', refName: 'chr22', start: 20000, end: 30000, cls: 'merge' }],
+  candidates: [
+    { id: 'g1.t1', refName: 'chr22', start: 20000, end: 30000, cls: 'merge' },
+  ],
   trackIds: ['prediction'],
   assembly: 'hg38',
   instance: 'http://127.0.0.1:1/',
@@ -226,15 +248,35 @@ const captureArgs = {
 }
 
 const flaky = stubBin(1)
-const retried = await captureAll({ ...captureArgs, outDir: path.join(flaky.dir, 'img'), captureBin: flaky.bin })
-check('a flake costs a card nothing', [retried[0].ok, retried[0].tries], [true, 2])
+const retried = await captureAll({
+  ...captureArgs,
+  outDir: path.join(flaky.dir, 'img'),
+  captureBin: flaky.bin,
+})
+check(
+  'a flake costs a card nothing',
+  [retried[0].ok, retried[0].tries],
+  [true, 2],
+)
 check('and the second run is what wrote the picture', flaky.runs(), 2)
 
 const dead = stubBin(99)
-const gaveUp = await captureAll({ ...captureArgs, outDir: path.join(dead.dir, 'img'), captureBin: dead.bin })
-check('a locus that will not draw is reported, not retried forever', [gaveUp[0].ok, gaveUp[0].tries, gaveUp[0].file], [false, 2, null])
+const gaveUp = await captureAll({
+  ...captureArgs,
+  outDir: path.join(dead.dir, 'img'),
+  captureBin: dead.bin,
+})
+check(
+  'a locus that will not draw is reported, not retried forever',
+  [gaveUp[0].ok, gaveUp[0].tries, gaveUp[0].file],
+  [false, 2, null],
+)
 check('the run gives up after the second try', dead.runs(), 2)
-check('and the card is told why', gaveUp[0].note.includes('detached Frame'), true)
+check(
+  'and the card is told why',
+  gaveUp[0].note.includes('detached Frame'),
+  true,
+)
 
 fs.rmSync(flaky.dir, { recursive: true, force: true })
 fs.rmSync(dead.dir, { recursive: true, force: true })
