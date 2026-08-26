@@ -171,6 +171,70 @@ check('a self-comparison agrees with itself', self.tally, {
   'novel-coding': 1,
 })
 
+// ---- which end of an intron moved ----------------------------------------
+
+// The donor is the intron's 5' END on the minus strand and its START on the
+// plus one, so the two sites cannot be named from coordinates alone. These two
+// genes are the same arrangement read in opposite directions: three exons, and
+// a prediction whose middle exon starts 30 bp late, leaving one junction that
+// shares the reference's left end and misses its right one by 30. Naming the
+// moved site by position calls both of them the same thing, and is wrong about
+// one of them.
+function gffModel(id, strand, exons, asGene) {
+  const line = (type, start, end, attrs) =>
+    `ctgS\tt\t${type}\t${start}\t${end}\t.\t${strand}\t.\t${attrs}`
+  const out = []
+  const span = [exons[0][0], exons.at(-1)[1]]
+  if (asGene) {
+    out.push(line('gene', ...span, `ID=${id};Name=${id};gene_type=protein_coding`))
+  }
+  const parent = asGene ? `;Parent=${id}` : ''
+  out.push(
+    line(asGene ? 'mRNA' : 'transcript', ...span, `ID=${id}.t1${parent}`),
+  )
+  for (const [s, e] of exons) {
+    out.push(line('exon', s, e, `Parent=${id}.t1`))
+  }
+  return out
+}
+const REF_EXONS = [
+  [1000, 1200],
+  [1500, 1700],
+  [2000, 2200],
+]
+const PRED_EXONS = [
+  [1000, 1200],
+  [1530, 1700],
+  [2000, 2200],
+]
+const tenKbOn = ([s, e]) => [s + 10000, e + 10000]
+const strandDir = fs.mkdtempSync(path.join(os.tmpdir(), 'portal-strand-'))
+const writeGff = (name, lines) => {
+  const file = path.join(strandDir, name)
+  fs.writeFileSync(file, `##gff-version 3\n${lines.join('\n')}\n`)
+  return file
+}
+const strandRows = classify({
+  predictionFile: writeGff('prediction.gff3', [
+    ...gffModel('plus', '+', PRED_EXONS, false),
+    ...gffModel('minus', '-', PRED_EXONS.map(tenKbOn), false),
+  ]),
+  referenceFile: writeGff('reference.gff3', [
+    ...gffModel('PLUSG', '+', REF_EXONS, true),
+    ...gffModel('MINUSG', '-', REF_EXONS.map(tenKbOn), true),
+  ]),
+}).rows
+const siteOf = id => strandRows.find(r => r.id === id)?.conflicts.map(c => c.label)
+check('on the plus strand the moved site is the acceptor', siteOf('plus.t1'), [
+  'acceptor-30',
+])
+check(
+  'and the same intron on the minus strand is the donor',
+  siteOf('minus.t1'),
+  ['donor-30'],
+)
+fs.rmSync(strandDir, { recursive: true, force: true })
+
 // ---- the links a card carries -------------------------------------------
 
 const candidate = { refName: 'chr22', start: 20000, end: 30000 }

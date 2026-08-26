@@ -76,7 +76,7 @@ Set **Unreviewed** as the verdict filter and the queue drains as it is judged,
 the cursor closing over each card that leaves.
 
 Verdicts live in the reviewer's browser (`localStorage`), which is one browser on
-one machine: **Export decisions** writes them out as TSV to hand back to a
+one machine: **Export** writes them out as TSV to hand back to a
 pipeline, and **Import** reads that TSV back, so a second reviewer, a second
 laptop or a cleared site setting is not a review started again from nothing.
 
@@ -188,7 +188,7 @@ gene-review-portal … --apollo https://apollo.example.org/
 ```
 
 Every card then carries an **Edit in Apollo** link that opens the same window in
-[Apollo 3](https://github.com/GMOD/Apollo3), and `Export decisions` gains an
+[Apollo 3](https://github.com/GMOD/Apollo3), and `Export` gains an
 `apollo_url` column, so a triaged queue hands over as a spreadsheet of links.
 
 Two things Apollo names differently:

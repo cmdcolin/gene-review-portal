@@ -131,6 +131,48 @@ EXAMPLE
 `)
 }
 
+// One entry per flag, so the loop stays four cases rather than forty and every
+// flag gets the same treatment: a value that is actually there, and a number
+// that is actually a number.
+const TEXT = {
+  '--prediction': 'prediction',
+  '--reference': 'reference',
+  '--fasta': 'fasta',
+  '--assembly': 'assembly',
+  '--out': 'out',
+  '--title': 'title',
+  '--instance': 'instance',
+  '--measurement': 'measurement',
+  '--public-config': 'publicConfig',
+  '--apollo': 'apollo',
+  '--apollo-assembly': 'apolloAssembly',
+  '--apollo-track': 'apolloTrack',
+  '--aliases': 'aliases',
+  '--prediction-name': 'predictionName',
+  '--reference-name': 'referenceName',
+  '--app-dir': 'appDir',
+  '--app-branch': 'appBranch',
+}
+const REPEATED = {
+  '--rnaseq': 'rnaseq',
+  '--rnaseq-name': 'rnaseqName',
+  '--region': 'region',
+}
+const NUMERIC = {
+  '--rnaseq-height': 'rnaseqHeight',
+  '--max': 'max',
+  '--width': 'width',
+  '--height': 'height',
+  '--scale': 'scale',
+}
+const SWITCHES = {
+  '--with-app': ['withApp', true],
+  '--no-capture': ['capture', false],
+  '--inline-images': ['inlineImages', true],
+  '--help': ['help', true],
+  '-h': ['help', true],
+}
+
 function parseArgs(argv) {
   const o = {
     rnaseq: [],
@@ -144,75 +186,43 @@ function parseArgs(argv) {
   }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
-    const next = () => argv[++i]
-    if (a === '--prediction') {
-      o.prediction = next()
-    } else if (a === '--reference') {
-      o.reference = next()
-    } else if (a === '--fasta') {
-      o.fasta = next()
-    } else if (a === '--rnaseq') {
-      o.rnaseq.push(next())
-    } else if (a === '--rnaseq-name') {
-      o.rnaseqName.push(next())
-    } else if (a === '--rnaseq-height') {
-      o.rnaseqHeight = +next()
-    } else if (a === '--assembly') {
-      o.assembly = next()
-    } else if (a === '--region') {
-      o.region.push(next())
-    } else if (a === '--out') {
-      o.out = next()
-    } else if (a === '--max') {
-      o.max = +next()
-    } else if (a === '--title') {
-      o.title = next()
-    } else if (a === '--instance') {
-      o.instance = next()
-    } else if (a === '--with-app') {
-      o.withApp = true
-    } else if (a === '--app-dir') {
-      o.appDir = next()
-      o.withApp = true
-    } else if (a === '--app-branch') {
-      o.appBranch = next()
-      o.withApp = true
-    } else if (a === '--measurement') {
-      o.measurement = next()
-    } else if (a === '--no-capture') {
-      o.capture = false
-    } else if (a === '--inline-images') {
-      o.inlineImages = true
-    } else if (a === '--public-config') {
-      o.publicConfig = next()
-    } else if (a === '--apollo') {
-      o.apollo = next()
-    } else if (a === '--apollo-assembly') {
-      o.apolloAssembly = next()
-    } else if (a === '--apollo-track') {
-      o.apolloTrack = next()
-    } else if (a === '--aliases') {
-      o.aliases = next()
-    } else if (a === '--prediction-name') {
-      o.predictionName = next()
-    } else if (a === '--reference-name') {
-      o.referenceName = next()
-    } else if (a === '--width') {
-      o.width = +next()
-    } else if (a === '--height') {
-      o.height = +next()
-    } else if (a === '--scale') {
-      o.scale = +next()
-    } else if (a === '--help' || a === '-h') {
-      o.help = true
+    const value = () => {
+      const v = argv[++i]
+      if (v === undefined) {
+        throw new Error(`${a} takes a value and got nothing`)
+      }
+      return v
+    }
+    if (SWITCHES[a]) {
+      const [key, val] = SWITCHES[a]
+      o[key] = val
+    } else if (TEXT[a]) {
+      o[TEXT[a]] = value()
+    } else if (REPEATED[a]) {
+      o[REPEATED[a]].push(value())
+    } else if (NUMERIC[a]) {
+      // `--max notanumber` used to reach slice(0, NaN) and select nothing,
+      // leaving a portal with no cards and no complaint about why
+      const v = value()
+      const n = Number(v)
+      if (!Number.isFinite(n)) {
+        throw new Error(`${a} takes a number and got ${v}`)
+      }
+      o[NUMERIC[a]] = n
     } else {
       throw new Error(`unknown flag ${a}`)
     }
   }
-  return o
+  return { ...o, withApp: Boolean(o.withApp || o.appDir || o.appBranch) }
 }
 
-const opts = parseArgs(process.argv.slice(2))
+let opts
+try {
+  opts = parseArgs(process.argv.slice(2))
+} catch (e) {
+  console.error(e.message)
+  process.exit(1)
+}
 if (opts.help || !opts.prediction || !opts.fasta || !opts.out) {
   usage()
   process.exit(opts.help ? 0 : 1)
@@ -258,7 +268,7 @@ function copyAlongside(input, dir) {
 }
 
 console.log(`→ ${out}`)
-checkTools({ needsBam: opts.rnaseq.length > 0 })
+checkTools()
 fs.mkdirSync(dataDir, { recursive: true })
 
 console.log('preparing data')
@@ -310,9 +320,8 @@ fs.rmSync(scratch, { recursive: true, force: true })
 
 // The config is written after the classifier because one of its tracks is the
 // classifier's own output.
-const conflictsRef = rows.length
-  ? prepareBed(conflictBed(rows), dataDir, 'conflicts')
-  : null
+const bed = rows.length ? conflictBed(rows) : null
+const conflictsRef = bed ? prepareBed(bed, dataDir, 'conflicts') : null
 
 const config = buildConfig({
   assembly,
@@ -510,7 +519,7 @@ if (opts.measurement && rows.length) {
       repro,
       rows,
       tally,
-      bedRecords: conflictBed(rows)
+      bedRecords: (bed || '')
         .split('\n')
         .filter(l => l && !l.startsWith('#')).length,
       region,
