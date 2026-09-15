@@ -9,6 +9,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
+import { apolloFeaturesParam, apolloLocalLink } from '../lib/apollo.mjs'
 import {
   absoluteLink,
   apolloLink,
@@ -114,6 +115,11 @@ OPTIONAL
                          checkout. Implies --with-app.
   --instance <url>       drive/link a hosted JBrowse instead (default ${DEFAULT_INSTANCE},
                          which is also the latest release; ${MAIN_INSTANCE} is main)
+  --apollo-local         every card gains an \`Edit in Apollo\` link that opens
+                         the model in Apollo 3 running client-side, with no
+                         collaboration server: the assembly names no internet
+                         account, so Apollo keeps the edits in the browser.
+                         Needs --public-config, since the link carries one.
   --apollo <url>         an Apollo 3 instance. Every card gains an \`Edit in
                          Apollo\` link that opens the same window there, which is
                          where the annotator action actually happens.
@@ -187,6 +193,7 @@ const NUMERIC = {
   '--scale': 'scale',
 }
 const SWITCHES = {
+  '--apollo-local': ['apolloLocal', true],
   '--with-app': ['withApp', true],
   '--no-capture': ['capture', false],
   '--inline-images': ['inlineImages', true],
@@ -273,6 +280,18 @@ if (opts.hub && opts.assemblyFrom) {
 }
 if (opts.referenceTrack && !fromHub) {
   console.error('--reference-track names a track in a hub; name one with --hub')
+  process.exit(1)
+}
+if (opts.apolloLocal && opts.apollo) {
+  console.error(
+    '--apollo-local and --apollo are two different Apollo deployments; pick one',
+  )
+  process.exit(1)
+}
+if (opts.apolloLocal && !opts.publicConfig) {
+  console.error(
+    '--apollo-local needs --public-config: the link carries the config URL, since there is no Apollo server holding one',
+  )
   process.exit(1)
 }
 if (opts.appDir && opts.appBranch) {
@@ -524,6 +543,29 @@ const imgFor = id => {
 const apolloAssembly = opts.apolloAssembly || assembly
 const apolloTracks = opts.apolloTrack ? [opts.apolloTrack] : []
 
+// Two Apollo links, and they are not variants of one thing. The server form
+// omits the config because the server holds its own; the local form carries
+// ours, and carries the model itself, because nothing else is going to supply
+// either.
+function apolloLinkFor(c) {
+  if (opts.apolloLocal) {
+    return apolloLocalLink({
+      instance: opts.instance || DEFAULT_INSTANCE,
+      configUrl: opts.publicConfig,
+      session: sessionFor(c, [...trackIds, `apollo_track_${assembly}`], assembly)
+        .session,
+      features: apolloFeaturesParam(c, assembly),
+    })
+  }
+  if (opts.apollo) {
+    return apolloLink(
+      sessionFor(c, apolloTracks, apolloAssembly).session,
+      opts.apollo,
+    )
+  }
+  return null
+}
+
 const cards = candidates.map(c => {
   const { loc, session } = sessionFor(c, trackIds, assembly)
   return {
@@ -539,12 +581,7 @@ const cards = candidates.map(c => {
     conflicts: c.conflicts,
     sharedJunctions: c.sharedJunctions,
     img: imgFor(c.id),
-    apollo: opts.apollo
-      ? apolloLink(
-          sessionFor(c, apolloTracks, apolloAssembly).session,
-          opts.apollo,
-        )
-      : null,
+    apollo: apolloLinkFor(c),
     url: opts.publicConfig
       ? absoluteLink(
           session,

@@ -3,8 +3,10 @@
 import { execFileSync, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
+import zlib from 'node:zlib'
 import path from 'node:path'
 
+import { apolloFeaturesParam, apolloLocalLink } from '../lib/apollo.mjs'
 import {
   absoluteLink,
   apolloLink,
@@ -295,6 +297,73 @@ check(
     .tracks,
   [],
 )
+// The LOCAL Apollo link is the other deployment, and inverts both of those: it
+// carries the config, because no server holds one, and it carries the model
+// itself in apolloFeatures, so the reviewer lands on something editable rather
+// than on an empty track.
+const model = rows.find(r => r.cls === 'merge')
+const localUrl = apolloLocalLink({
+  instance: 'https://jbrowse.org/code/jb2/v5.0.0-beta.8/',
+  configUrl: 'https://example.org/portal/config.json',
+  session: sessionFor(model, ['apollo_track_hg38'], 'hg38').session,
+  features: apolloFeaturesParam(model, 'hg38'),
+})
+check('a local Apollo link carries the config', localUrl.includes('config='), true)
+check(
+  'a local Apollo link carries the model',
+  localUrl.includes('&apolloFeatures='),
+  true,
+)
+
+const decodeFeatures = url => {
+  const raw = url.split('&apolloFeatures=')[1]
+  const b64 = raw.replaceAll('-', '+').replaceAll('_', '/')
+  const pad = b64.length % 4 ? '='.repeat(4 - (b64.length % 4)) : ''
+  return JSON.parse(
+    zlib.gunzipSync(Buffer.from(b64 + pad, 'base64')).toString('utf8'),
+  )
+}
+const payload = decodeFeatures(localUrl)
+check('the payload is keyed by assembly name', Object.keys(payload), ['hg38'])
+const gene = payload.hg38[0]
+check('the model arrives as a gene', gene.type, 'gene')
+check('at the model\'s own coordinates', [gene.min, gene.max], [
+  model.start,
+  model.end,
+])
+// Apollo calculates CDS locations only for a transcript or an ontology
+// equivalent. An mRNA child renders as a throw from a mobx reaction on every
+// repaint rather than as a bad feature, so nothing about it reads as a type
+// problem.
+check(
+  'whose child is a transcript, not an mRNA',
+  Object.values(gene.children).map(c => c.type),
+  ['transcript'],
+)
+const parts = Object.values(Object.values(gene.children)[0].children)
+check(
+  'carrying the model\'s own parts',
+  parts.length,
+  model.parts.length,
+)
+check(
+  'and only exon and CDS among them',
+  [...new Set(parts.map(p => p.type))].sort(),
+  [...new Set(model.parts.map(p => (p.type === 'CDS' ? 'CDS' : 'exon')))].sort(),
+)
+// Interbase on both sides: readGff already subtracted one from the GFF start,
+// so a conversion here would double it.
+check(
+  'at interbase coordinates, unshifted',
+  [parts[0].min, parts[0].max],
+  [model.parts[0].start, model.parts[0].end],
+)
+check(
+  'a model with no parts contributes no payload',
+  apolloFeaturesParam({ ...model, parts: [] }, 'hg38'),
+  undefined,
+)
+
 check(
   'an Apollo link opens the track it is given',
   JSON.parse(

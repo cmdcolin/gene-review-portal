@@ -16,6 +16,35 @@ reviewer sees what the call was made against.
 The triage is the browser's half. The edit belongs in an annotation editor:
 **Split into two models** is not a viewer action.
 
+There are two Apollo deployments and the links differ, so pick by which one you
+have.
+
+### Without a server
+
+Apollo stores annotations on a collaboration server only when the assembly names
+an internet account. Without one it uses its local backend and keeps them in the
+browser's IndexedDB, which needs nothing stood up:
+
+```bash
+gene-review-portal … --apollo-local --public-config https://example.org/portal/config.json
+```
+
+Each card's link carries the portal's own config and the model itself, gzipped
+into Apollo's `apolloFeatures` parameter, so the reviewer arrives with the
+prediction already in the editable track rather than with an empty one. The
+config it points at has to load the Apollo plugin and declare no
+`internetAccounts`; https://jbrowse.org/demos/apollo3/config.json is a working
+one to copy.
+
+`--public-config` is required, because the link carries the config URL and there
+is no server holding one.
+
+**The edits live in that browser and nowhere else.** Clearing site data for the
+host loses them, and nothing syncs. **Download GFF3** in the Apollo menu is the
+durable output.
+
+### Against a collaboration server
+
 ```bash
 gene-review-portal … --apollo https://apollo.example.org/
 ```
