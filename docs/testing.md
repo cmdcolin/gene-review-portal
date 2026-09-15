@@ -10,8 +10,9 @@ Offline, about a second.
 
 It then drives the review page itself in a headless Chrome — the keyboard queue,
 the in-place repaint, the progress arithmetic and the TSV round trip, none of
-which the offline half can reach. That needs puppeteer; without it the run says
-so and stops rather than reporting a page it never opened.
+which the offline half can reach. `pnpm install` brings the puppeteer that needs
+and downloads its browser; without it the run says so and stops rather than
+reporting a page it never opened.
 
 The fixture deliberately contains a small gene inside a big gene's intron **on
 the same strand**, which is the case that fails if the comparison reverts to

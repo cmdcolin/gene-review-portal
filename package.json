@@ -29,9 +29,12 @@
     "test": "node test/run.mjs"
   },
   "dependencies": {
-    "@jbrowse/capture": "link:../jbrowse-components/products/jbrowse-capture",
+    "@jbrowse/capture": "5.0.0-beta.8",
     "esbuild": "^0.28.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "puppeteer": "^25.10.0"
   }
 }

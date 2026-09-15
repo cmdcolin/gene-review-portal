@@ -1,8 +1,7 @@
 // The review page is where a verdict actually gets made, and none of it is
 // reachable from run.mjs: the keyboard queue, the in-place repaint and the
 // progress arithmetic all live in template.html. This builds a real portal off
-// the same fixture and drives it. Needs puppeteer, which the monorepo has and
-// a bare gene-review-portal checkout does not — there it says so and stops.
+// the same fixture and drives it. Needs puppeteer, a devDependency here.
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -18,9 +17,8 @@ try {
   puppeteer = (await import('puppeteer')).default
 } catch {
   console.log(
-    'skipped: puppeteer did not resolve, so template.html is unchecked here.\n' +
-      '         it ships with @jbrowse/capture; run this from a jbrowse-components\n' +
-      '         checkout, or `npm i -D puppeteer`, to cover the review page.',
+    'skipped: puppeteer did not resolve, so template.html is unchecked.\n' +
+      '         run `pnpm install` to cover the review page.',
   )
   process.exit(0)
 }

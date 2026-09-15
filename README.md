@@ -41,19 +41,11 @@ pnpm install
 ```
 
 React, react-dom and esbuild build the review page. The other dependency is
-[`@jbrowse/capture`](https://github.com/GMOD/jbrowse-components/tree/main/products/jbrowse-capture),
-which is what knows when a JBrowse has actually finished drawing — the
-difference between a directory of screenshots and a directory of pictures of
-empty browsers. It is not on npm yet, so `package.json` links it out of a
-jbrowse-components checkout beside this one:
-
-```
-~/src/jbrowse-components
-~/src/gene-review-portal
-```
-
-Point the link somewhere else, or drop the dependency and run with
-`--no-capture`, which builds the same page with links and no pictures.
+[`@jbrowse/capture`](https://www.npmjs.com/package/@jbrowse/capture), which
+knows when a JBrowse has actually finished drawing — the difference between a
+directory of screenshots and a directory of pictures of empty browsers. It
+brings puppeteer with it. Run with `--no-capture` to skip it and build the same
+page with links and no pictures.
 
 Also needed on PATH: `bgzip`, `tabix` and `samtools` (htslib + samtools), plus
 the `jbrowse` CLI (`npm i -g @jbrowse/cli`) for `--with-app`.
@@ -105,5 +97,4 @@ laptop or a cleared site setting is not a review started again from nothing.
 ## License
 
 Apache-2.0. Extracted from
-[jbrowse-components](https://github.com/GMOD/jbrowse-components), where it lives
-as `demo/tiberius-portal`.
+[jbrowse-components](https://github.com/GMOD/jbrowse-components).
