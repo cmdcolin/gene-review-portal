@@ -27,4 +27,6 @@ isoform, where flattening and reading per transcript agree — which is why the
 fixture missed the bug for as long as it did.
 
 `docs/shoot.mjs` rebuilds the two screenshots in the main README against a
-local JBrowse build.
+local JBrowse build. `bin/frame-card.mjs` frames a single card out of a built
+portal — the picture to hang off an issue or a PR, rather than of the whole
+page.
