@@ -144,11 +144,7 @@ OPTIONAL
   --public-config <url>  where config.json will be published. Captures still run
                          against the local copy; only the links use this, which
                          is what lets a single-file portal be deployed on its own.
-  --width/--height <px>  capture size (default 1400x450). 450 is what fits the
-                         prediction, the disagreements and the reference lane
-                         it was read against; a shorter frame cuts the
-                         reference off and the card stops saying what the
-                         model disagrees with.
+  --width/--height <px>  capture size (default 1400x450)
   --scale <n>            capture device pixel ratio (default 2)
 
 EXAMPLE
