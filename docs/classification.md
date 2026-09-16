@@ -64,7 +64,10 @@ puts every minus-strand edit at the wrong end of its intron.
 
 The same file rides in every capture and every live link as the
 **Disagreements** track, directly under the prediction, so the picture points at
-the junction rather than leaving a reviewer to find it.
+the junction rather than leaving a reviewer to find it. The reference annotation
+is the lane below, because a marked junction still does not say what the model
+disagrees *with*: a `split` names a cut point, and only the two reference genes
+either side of it say what was merged.
 
 **The BED reaches further than the page does.** Cards exist only for the four
 flagged classes, and a model sharing four junctions out of five is filed as

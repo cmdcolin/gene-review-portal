@@ -35,13 +35,13 @@ execFileSync(
     '--title', 'Fixture gene models',
     ...(appDir ? ['--app-dir', appDir] : ['--with-app']),
     '--width', '1200',
-    '--height', '340',
+    '--height', '450',
     '--out', portal,
   ],
   { stdio: 'inherit' },
 )
 
-// 772 ends the frame on the first card's bottom edge, with the second one's
+// 852 ends the frame on the first card's bottom edge, with the second one's
 // stripe just showing — a queue rather than a single card, and no ragged cut
 // through the middle of a capture.
 const browser = await puppeteer.launch({
@@ -53,7 +53,7 @@ for (const scheme of ['light', 'dark']) {
   await page.emulateMediaFeatures([
     { name: 'prefers-color-scheme', value: scheme },
   ])
-  await page.setViewport({ width: 1280, height: 772 })
+  await page.setViewport({ width: 1280, height: 852 })
   await page.goto(`file://${path.join(portal, 'index.html')}`, {
     waitUntil: 'load',
   })
@@ -63,11 +63,33 @@ for (const scheme of ['light', 'dark']) {
     localStorage.clear()
   })
   await page.reload({ waitUntil: 'load' })
+  const ids = await page.$$eval('.card', els => els.map(e => e.dataset.id))
   // a queue mid-review says more than an untouched one: one card judged, the
-  // progress bar carrying it, the cursor moved on
-  await page.keyboard.press('j')
-  await page.keyboard.press('2')
-  await page.keyboard.press('j')
+  // progress bar carrying it, the cursor moved on. The key handlers only exist
+  // once React has hydrated, and a press before that lands on nothing and is
+  // gone — so each one repeats until the DOM shows it took.
+  const press = async (key, landed, arg) => {
+    for (let i = 0; i < 40; i++) {
+      await page.keyboard.press(key)
+      // half a second of polling after each press, so a landed one is seen
+      // long before the loop would send a second and move the cursor twice
+      for (let j = 0; j < 10; j++) {
+        if (await page.evaluate(landed, arg)) {
+          return
+        }
+        await new Promise(r => setTimeout(r, 50))
+      }
+    }
+    throw new Error(`${key} never took effect`)
+  }
+  const current = id => `.card[data-id="${id}"][data-current]`
+  await press('j', sel => !!document.querySelector(sel), current(ids[0]))
+  await press(
+    '2',
+    sel => document.querySelector(sel)?.dataset.verdict === 'edit',
+    current(ids[0]),
+  )
+  await press('j', sel => !!document.querySelector(sel), current(ids[1]))
   await page.evaluate(() => {
     window.scrollTo(0, 0)
   })

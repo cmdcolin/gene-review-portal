@@ -25,7 +25,9 @@ Live example, built from the command in
 [`demos/`](https://jbrowse.org/demos/tiberius_review/): Tiberius on human
 chr22, read against the hub's GENCODE 49.
 
-![The review page: a control bar, and one card per flagged model](docs/review-page-light.png)
+![The review page: a control bar, and one card per flagged model, each
+capture stacking the prediction, the junctions that disagree and the
+reference genes read against](docs/review-page-light.png)
 
 The page follows the reader's theme, so the same portal is legible either way:
 
