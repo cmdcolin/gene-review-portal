@@ -25,16 +25,14 @@ Live example, built from the command in
 [`demos/`](https://jbrowse.org/demos/tiberius_review/): Tiberius on human
 chr22, read against the hub's GENCODE 49.
 
-![The review page: a control bar, and one card per flagged model, each
-capture stacking the prediction, the junctions that disagree and the
-reference genes read against](docs/review-page-light.png)
+![One card per flagged model: the prediction, the junctions that disagree, and
+the reference genes it was read against](docs/review-page-light.png)
 
-The page follows the reader's theme, so the same portal is legible either way:
+The page follows the reader's theme:
 
 ![The same page in dark mode](docs/review-page-dark.png)
 
-Both are `pnpm test`'s own fixture, captured against a local JBrowse build —
-`docs/shoot.mjs` rebuilds them.
+Both are `pnpm test`'s own fixture; `docs/shoot.mjs` rebuilds them.
 
 ## Install
 
@@ -42,15 +40,15 @@ Both are `pnpm test`'s own fixture, captured against a local JBrowse build —
 pnpm install
 ```
 
-React, react-dom and esbuild build the review page. The other dependency is
-[`@jbrowse/capture`](https://www.npmjs.com/package/@jbrowse/capture), which
-knows when a JBrowse has actually finished drawing — the difference between a
-directory of screenshots and a directory of pictures of empty browsers. It
-brings puppeteer with it. Run with `--no-capture` to skip it and build the same
-page with links and no pictures.
+React, react-dom and esbuild build the review page.
+[`@jbrowse/capture`](https://www.npmjs.com/package/@jbrowse/capture) takes the
+screenshots — it knows when a JBrowse has finished drawing, which is the
+difference between a directory of screenshots and a directory of pictures of
+empty browsers — and brings puppeteer with it. `--no-capture` skips it, for the
+same page with links and no pictures.
 
-Also needed on PATH: `bgzip`, `tabix` and `samtools` (htslib + samtools), plus
-the `jbrowse` CLI (`npm i -g @jbrowse/cli`) for `--with-app`.
+Also needed on PATH: `bgzip`, `tabix` and `samtools`, plus the `jbrowse` CLI
+(`npm i -g @jbrowse/cli`) for `--with-app`.
 
 ## What comes out
 
@@ -78,46 +76,23 @@ verdict back off. **Keys** in the toolbar, or <kbd>?</kbd>, shows the list.
 Set **Unreviewed** as the verdict filter and the queue drains as it is judged,
 the cursor closing over each card that leaves.
 
-Verdicts live in the reviewer's browser (`localStorage`), which is one browser on
-one machine: **Export** writes them out as TSV to hand back to a
-pipeline, and **Import** reads that TSV back, so a second reviewer, a second
-laptop or a cleared site setting is not a review started again from nothing.
+Verdicts live in the reviewer's browser (`localStorage`) — one browser, one
+machine. **Export** writes them out as TSV for a pipeline and **Import** reads
+that TSV back, so a second reviewer, a second laptop or cleared site data is not
+a review started again from nothing.
 
 ## Documentation
 
-- [How the page is built](docs/architecture.md) — the React/esbuild pipeline,
-  and staging a track's display settings into both the capture and the link
-- [How a model gets flagged](docs/classification.md) — the classifier, and
-  where each disagreement is marked in `conflicts.bed`
-- [Evidence and Apollo](docs/evidence-and-apollo.md) — `--rnaseq`, and handing
-  a flagged model to an annotation editor
+- [How the page is built](docs/architecture.md) — the React/esbuild pipeline
+- [How a model gets flagged](docs/classification.md) — the classifier and
+  `conflicts.bed`
+- [Evidence and Apollo](docs/evidence-and-apollo.md) — `--rnaseq`, and handing a
+  flagged model to an annotation editor
 - [Flags worth knowing](docs/flags.md)
 - [Naming an assembly instead of assembling one](docs/hubs.md) — `--hub` and
   `--reference-track`
+- [What this does not do](docs/known-limitations.md) — Apollo, link size, memory
 - [Test](docs/testing.md) — `pnpm test`
-
-## Known limitations
-
-Frank list, kept here so nobody rediscovers these by being surprised.
-
-- **`--apollo-local` needs a config that loads the Apollo plugin**, and the only
-  bundle that works against JBrowse 5 today is built from
-  [an open, unreviewed Apollo branch](https://github.com/GMOD/Apollo3/pull/823).
-  https://jbrowse.org/demos/apollo3/config.json is one to copy, and it can break
-  when that branch moves. Point at a published Apollo release once one
-  peer-depends `@jbrowse/core@^5`.
-- **Edits made in local Apollo live in one browser.** IndexedDB, scoped to the
-  origin serving JBrowse, so nothing syncs between people or machines and
-  clearing site data loses them. Apollo's **Download GFF3** is the durable
-  output. A review with more than one annotator wants the collaboration server
-  and `--apollo`.
-- **A card's link carries its model in the URL.** The Tiberius chr22 model, 58
-  exon and CDS parts, gzips to a 1,256-byte parameter in a 1,632-byte link. A
-  model an order of magnitude larger has not been tried, and nothing here caps
-  it or warns.
-- **The classifier reads each annotation into memory whole**, decompressing it
-  in one go (`readGff`). `--region` is what keeps that bounded, and a
-  whole-genome run without one has not been measured.
 
 ## License
 
