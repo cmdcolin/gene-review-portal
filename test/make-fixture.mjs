@@ -62,7 +62,7 @@ function gffGene({
   type = 'protein_coding',
   src,
 }) {
-  const forms = isoforms || [exons]
+  const forms = isoforms ?? [exons]
   const start = Math.min(...forms.map(f => f[0][0]))
   const end = Math.max(...forms.map(f => f[f.length - 1][1]))
   rows.push([
@@ -309,8 +309,7 @@ const fmt = rows =>
   `##gff-version 3\n${CONTIGS.map(
     c => `##sequence-region ${c.name} 1 ${c.length}`,
   ).join('\n')}\n${rows
-    .slice()
-    .sort(
+    .toSorted(
       (a, b) =>
         String(a[0]).localeCompare(String(b[0])) || a[3] - b[3] || a[4] - b[4],
     )

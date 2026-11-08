@@ -243,7 +243,7 @@ function parseArgs(argv) {
       throw new Error(`unknown flag ${a}`)
     }
   }
-  return { ...o, withApp: Boolean(o.withApp || o.appDir || o.appBranch) }
+  return { ...o, withApp: Boolean(o.withApp ?? o.appDir ?? o.appBranch) }
 }
 
 let opts
@@ -259,23 +259,29 @@ if (opts.listHubs) {
 }
 if (opts.listTracks) {
   if (!opts.hub && !opts.assemblyFrom) {
-    console.error('--list-tracks lists the tracks in a hub; name one with --hub')
+    console.error(
+      '--list-tracks lists the tracks in a hub; name one with --hub',
+    )
     process.exit(1)
   }
   console.log(hubTracks(await fetchHubConfig(opts)))
   process.exit(0)
 }
-const fromHub = opts.hub || opts.assemblyFrom
+const fromHub = opts.hub ?? opts.assemblyFrom
 if (opts.help || !opts.prediction || !(opts.fasta || fromHub) || !opts.out) {
   usage()
   process.exit(opts.help ? 0 : 1)
 }
 if (opts.fasta && fromHub) {
-  console.error('--fasta and --hub/--assembly-from both say what the assembly is')
+  console.error(
+    '--fasta and --hub/--assembly-from both say what the assembly is',
+  )
   process.exit(1)
 }
 if (opts.hub && opts.assemblyFrom) {
-  console.error('--hub and --assembly-from both say which config to take it from')
+  console.error(
+    '--hub and --assembly-from both say which config to take it from',
+  )
   process.exit(1)
 }
 if (opts.referenceTrack && !fromHub) {
@@ -327,14 +333,13 @@ let referenceAdapter = null
 if (opts.referenceTrack) {
   const track = trackFromHub(hub, opts.referenceTrack)
   opts.reference = track.uri
-  opts.referenceName = opts.referenceName || track.name
+  opts.referenceName = opts.referenceName ?? track.name
   referenceAdapter = track.adapter
 }
 const assembly =
-  opts.assembly ||
-  hubAssembly?.name ||
-  path.basename(opts.fasta).replace(/\.(fa|fasta)(\.gz)?$/i, '') ||
-  'genome'
+  opts.assembly ??
+  hubAssembly?.name ??
+  (path.basename(opts.fasta).replace(/\.(fa|fasta)(\.gz)?$/i, '') || 'genome')
 if (hubAssembly) {
   hubAssembly.name = assembly
 }
@@ -352,7 +357,9 @@ checkTools()
 fs.mkdirSync(dataDir, { recursive: true })
 
 console.log('preparing data')
-const fastaRef = hubAssembly ? null : prepareFasta(opts.fasta, dataDir, assembly)
+const fastaRef = hubAssembly
+  ? null
+  : prepareFasta(opts.fasta, dataDir, assembly)
 const predictionRef = prepareGff(opts.prediction, dataDir, 'prediction')
 const referenceRef = opts.reference
   ? prepareGff(opts.reference, dataDir, 'reference')
@@ -421,10 +428,10 @@ const config = buildConfig({
   rnaNames: opts.rnaseqName,
   rnaHeight: opts.rnaseqHeight,
   predictionName:
-    opts.predictionName ||
+    opts.predictionName ??
     path.basename(opts.prediction).replace(/\.gff3?(\.gz)?$/i, ''),
   referenceName:
-    opts.referenceName ||
+    opts.referenceName ??
     (opts.reference
       ? path.basename(opts.reference).replace(/\.gff3?(\.gz)?$/i, '')
       : null),
@@ -432,7 +439,7 @@ const config = buildConfig({
 fs.writeFileSync(path.join(out, 'config.json'), JSON.stringify(config, null, 2))
 const trackIds = config.tracks.map(t => t.trackId)
 
-const agrees = tally.agrees || 0
+const agrees = tally.agrees ?? 0
 const flagged = total - agrees
 console.log(`  ${total} models · ${agrees} agree · ${flagged} flagged`)
 for (const k of CLASS_ORDER) {
@@ -457,7 +464,7 @@ if (conflictsRef) {
 const candidates = CLASS_ORDER.flatMap(cls =>
   rows
     .filter(r => r.cls === cls)
-    .sort((a, b) => b.nExons - a.nExons || b.span - a.span)
+    .toSorted((a, b) => b.nExons - a.nExons || b.span - a.span)
     .slice(0, opts.max),
 )
 console.log(
@@ -488,7 +495,7 @@ if (opts.capture && candidates.length) {
   const server = await serveStatic(out)
   const instance = opts.withApp
     ? `${server.url}/jbrowse/`
-    : opts.instance || DEFAULT_INSTANCE
+    : (opts.instance ?? DEFAULT_INSTANCE)
   const configUrl = `${server.url}/config.json`
   if (!opts.withApp) {
     console.log(`  driving ${instance} against ${configUrl}`)
@@ -530,7 +537,7 @@ if (opts.capture && candidates.length) {
 
 const imgFor = id => {
   const hit = captured.find(c => c.id === id)
-  if (!hit || !hit.ok) {
+  if (!hit?.ok) {
     return null
   }
   if (!opts.inlineImages) {
@@ -540,7 +547,7 @@ const imgFor = id => {
   return `data:image/png;base64,${bytes.toString('base64')}`
 }
 
-const apolloAssembly = opts.apolloAssembly || assembly
+const apolloAssembly = opts.apolloAssembly ?? assembly
 const apolloTracks = opts.apolloTrack ? [opts.apolloTrack] : []
 
 // Two Apollo links, and they are not variants of one thing. The server form
@@ -550,10 +557,13 @@ const apolloTracks = opts.apolloTrack ? [opts.apolloTrack] : []
 function apolloLinkFor(c) {
   if (opts.apolloLocal) {
     return apolloLocalLink({
-      instance: opts.instance || DEFAULT_INSTANCE,
+      instance: opts.instance ?? DEFAULT_INSTANCE,
       configUrl: opts.publicConfig,
-      session: sessionFor(c, [...trackIds, `apollo_track_${assembly}`], assembly)
-        .session,
+      session: sessionFor(
+        c,
+        [...trackIds, `apollo_track_${assembly}`],
+        assembly,
+      ).session,
       features: apolloFeaturesParam(c, assembly),
     })
   }
@@ -585,28 +595,29 @@ const cards = candidates.map(c => {
     url: opts.publicConfig
       ? absoluteLink(
           session,
-          opts.instance || DEFAULT_INSTANCE,
+          opts.instance ?? DEFAULT_INSTANCE,
           opts.publicConfig,
         )
       : opts.withApp
         ? relativeLink(session)
         : absoluteLink(
             session,
-            opts.instance || DEFAULT_INSTANCE,
+            opts.instance ?? DEFAULT_INSTANCE,
             'config.json',
           ),
   }
 })
 
+// The record is only worth having if somebody else can take it again, so the
+// repro is the invocation verbatim, quoted — a track name with a space in it
+// is one word here and two when pasted back.
+const quote = a =>
+  /^[\w./:@=-]+$/.test(a) ? a : `'${a.replaceAll("'", String.raw`'\''`)}'`
+
 if (opts.measurement && rows.length) {
   const prefix = path.resolve(opts.measurement)
   const name = path.basename(prefix)
   const region = opts.region.join(', ')
-  // The record is only worth having if somebody else can take it again, so the
-  // repro is the invocation verbatim, quoted — a track name with a space in it
-  // is one word here and two when pasted back.
-  const quote = a =>
-    /^[\w./:@=-]+$/.test(a) ? a : `'${a.replaceAll("'", String.raw`'\''`)}'`
   const repro = ['gene-review-portal', ...process.argv.slice(2)]
     .map(quote)
     .join(' ')
@@ -624,9 +635,8 @@ if (opts.measurement && rows.length) {
       repro,
       rows,
       tally,
-      bedRecords: (bed || '')
-        .split('\n')
-        .filter(l => l && !l.startsWith('#')).length,
+      bedRecords: (bed ?? '').split('\n').filter(l => l && !l.startsWith('#'))
+        .length,
       region,
     }),
   ]
@@ -648,7 +658,7 @@ if (opts.measurement && rows.length) {
   }
 }
 
-const title = opts.title || `${assembly} gene models`
+const title = opts.title ?? `${assembly} gene models`
 const data = {
   portalId,
   title,

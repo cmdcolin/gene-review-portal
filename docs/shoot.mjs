@@ -13,7 +13,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import puppeteer from 'puppeteer'
+import { launch } from 'puppeteer'
 
 const HERE = import.meta.dirname
 const appDir = process.argv[2]
@@ -21,22 +21,34 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gene-review-shots-'))
 const fixture = path.join(tmp, 'fixture')
 const portal = path.join(tmp, 'portal')
 
-execFileSync('node', [path.join(HERE, '..', 'test', 'make-fixture.mjs'), fixture], {
-  stdio: 'inherit',
-})
+execFileSync(
+  'node',
+  [path.join(HERE, '..', 'test', 'make-fixture.mjs'), fixture],
+  {
+    stdio: 'inherit',
+  },
+)
 execFileSync(
   'node',
   [
     path.join(HERE, '..', 'bin', 'make-portal.mjs'),
-    '--prediction', path.join(fixture, 'prediction.gff3'),
-    '--reference', path.join(fixture, 'reference.gff3'),
-    '--fasta', path.join(fixture, 'genome.fa'),
-    '--assembly', 'fixture',
-    '--title', 'Fixture gene models',
+    '--prediction',
+    path.join(fixture, 'prediction.gff3'),
+    '--reference',
+    path.join(fixture, 'reference.gff3'),
+    '--fasta',
+    path.join(fixture, 'genome.fa'),
+    '--assembly',
+    'fixture',
+    '--title',
+    'Fixture gene models',
     ...(appDir ? ['--app-dir', appDir] : ['--with-app']),
-    '--width', '1200',
-    '--height', '450',
-    '--out', portal,
+    '--width',
+    '1200',
+    '--height',
+    '450',
+    '--out',
+    portal,
   ],
   { stdio: 'inherit' },
 )
@@ -44,7 +56,9 @@ execFileSync(
 // 852 ends the frame on the first card's bottom edge, with the second one's
 // stripe just showing — a queue rather than a single card, and no ragged cut
 // through the middle of a capture.
-const browser = await puppeteer.launch({
+const current = id => `.card[data-id="${id}"][data-current]`
+
+const browser = await launch({
   headless: true,
   args: ['--no-sandbox'],
 })
@@ -82,7 +96,6 @@ for (const scheme of ['light', 'dark']) {
     }
     throw new Error(`${key} never took effect`)
   }
-  const current = id => `.card[data-id="${id}"][data-current]`
   await press('j', sel => !!document.querySelector(sel), current(ids[0]))
   await press(
     '2',
@@ -96,7 +109,9 @@ for (const scheme of ['light', 'dark']) {
   await new Promise(r => setTimeout(r, 400))
   const file = path.join(HERE, `review-page-${scheme}.png`)
   await page.screenshot({ path: file })
-  console.log(`${path.relative(process.cwd(), file)} ${fs.statSync(file).size} bytes`)
+  console.log(
+    `${path.relative(process.cwd(), file)} ${fs.statSync(file).size} bytes`,
+  )
   await page.close()
 }
 await browser.close()

@@ -50,8 +50,8 @@ gene-review-portal … --apollo https://apollo.example.org/
 ```
 
 Every card then carries an **Edit in Apollo** link that opens the same window in
-[Apollo 3](https://github.com/GMOD/Apollo3), and `Export` gains an
-`apollo_url` column, so a triaged queue hands over as a spreadsheet of links.
+[Apollo 3](https://github.com/GMOD/Apollo3), and `Export` gains an `apollo_url`
+column, so a triaged queue hands over as a spreadsheet of links.
 
 Two things Apollo names differently:
 
@@ -61,7 +61,7 @@ Two things Apollo names differently:
 - `--apollo-track <trackId>` to open Apollo's annotation layer with the view.
   **Default is no track**, on purpose: Apollo is a JBrowse plugin, so a link is
   an ordinary session spec, and it adds `apollo_track_<assembly>` from a
-  reaction that runs *after* the session is parsed. A link naming a track that
+  reaction that runs _after_ the session is parsed. A link naming a track that
   the Apollo server's config does not itself declare fails to open at all, where
   a link naming none arrives at the right locus and leaves the annotator one
   click from their own layer.

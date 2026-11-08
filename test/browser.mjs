@@ -132,7 +132,7 @@ await check(
   () =>
     page.evaluate(() =>
       [...document.querySelectorAll('link[href],script[src],img[src]')]
-        .map(e => e.getAttribute('href') || e.getAttribute('src'))
+        .map(e => e.getAttribute('href') ?? e.getAttribute('src'))
         .filter(u => /^(https?:)?\/\//.test(u)),
     ),
   [],
@@ -229,7 +229,7 @@ await check(
 
 // React keeps its own record of the last value it set, so assigning .value and
 // firing `input` leaves it certain nothing changed and onChange never runs.
-async function typeSearch(text) {
+async function typeSearch(query) {
   await page.$eval(
     '#q',
     (el, v) => {
@@ -239,7 +239,7 @@ async function typeSearch(text) {
       ).set.call(el, v)
       el.dispatchEvent(new Event('input', { bubbles: true }))
     },
-    text,
+    query,
   )
 }
 

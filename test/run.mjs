@@ -139,11 +139,13 @@ check(
 check(
   'the records come out sorted, as tabix requires',
   bedRows.map(r => `${r[0]}:${r[1]}`),
-  [...bedRows.map(r => `${r[0]}:${r[1]}`)].sort(
-    (a, b) =>
-      a.split(':')[0].localeCompare(b.split(':')[0]) ||
-      +a.split(':')[1] - +b.split(':')[1],
-  ),
+  bedRows
+    .map(r => `${r[0]}:${r[1]}`)
+    .toSorted(
+      (a, b) =>
+        a.split(':')[0].localeCompare(b.split(':')[0]) ||
+        +a.split(':')[1] - +b.split(':')[1],
+    ),
 )
 
 const novel = rows.filter(r => r.cls === 'novel-locus').map(r => r.refName)
@@ -196,7 +198,9 @@ function gffModel(id, strand, exons, asGene) {
   const out = []
   const span = [exons[0][0], exons.at(-1)[1]]
   if (asGene) {
-    out.push(line('gene', ...span, `ID=${id};Name=${id};gene_type=protein_coding`))
+    out.push(
+      line('gene', ...span, `ID=${id};Name=${id};gene_type=protein_coding`),
+    )
   }
   const parent = asGene ? `;Parent=${id}` : ''
   out.push(
@@ -234,7 +238,8 @@ const strandRows = classify({
     ...gffModel('MINUSG', '-', REF_EXONS.map(tenKbOn), true),
   ]),
 }).rows
-const siteOf = id => strandRows.find(r => r.id === id)?.conflicts.map(c => c.label)
+const siteOf = id =>
+  strandRows.find(r => r.id === id)?.conflicts.map(c => c.label)
 check('on the plus strand the moved site is the acceptor', siteOf('plus.t1'), [
   'acceptor-30',
 ])
@@ -308,7 +313,11 @@ const localUrl = apolloLocalLink({
   session: sessionFor(model, ['apollo_track_hg38'], 'hg38').session,
   features: apolloFeaturesParam(model, 'hg38'),
 })
-check('a local Apollo link carries the config', localUrl.includes('config='), true)
+check(
+  'a local Apollo link carries the config',
+  localUrl.includes('config='),
+  true,
+)
 check(
   'a local Apollo link carries the model',
   localUrl.includes('&apolloFeatures='),
@@ -327,10 +336,11 @@ const payload = decodeFeatures(localUrl)
 check('the payload is keyed by assembly name', Object.keys(payload), ['hg38'])
 const gene = payload.hg38[0]
 check('the model arrives as a gene', gene.type, 'gene')
-check('at the model\'s own coordinates', [gene.min, gene.max], [
-  model.start,
-  model.end,
-])
+check(
+  "at the model's own coordinates",
+  [gene.min, gene.max],
+  [model.start, model.end],
+)
 // Apollo calculates CDS locations only for a transcript or an ontology
 // equivalent. An mRNA child renders as a throw from a mobx reaction on every
 // repaint rather than as a bad feature, so nothing about it reads as a type
@@ -341,15 +351,13 @@ check(
   ['transcript'],
 )
 const parts = Object.values(Object.values(gene.children)[0].children)
-check(
-  'carrying the model\'s own parts',
-  parts.length,
-  model.parts.length,
-)
+check("carrying the model's own parts", parts.length, model.parts.length)
 check(
   'and only exon and CDS among them',
-  [...new Set(parts.map(p => p.type))].sort(),
-  [...new Set(model.parts.map(p => (p.type === 'CDS' ? 'CDS' : 'exon')))].sort(),
+  [...new Set(parts.map(p => p.type))].toSorted((a, b) => a.localeCompare(b)),
+  [
+    ...new Set(model.parts.map(p => (p.type === 'CDS' ? 'CDS' : 'exon'))),
+  ].toSorted((a, b) => a.localeCompare(b)),
 )
 // Interbase on both sides: readGff already subtracted one from the GFF start,
 // so a conversion here would double it.
@@ -469,7 +477,11 @@ check(
 // The same mapping core's fetchHub uses, so a name that opens in JBrowse opens
 // here: a UCSC database is a flat path, a GenArk accession fans its nine digits
 // into three levels.
-check('a UCSC database name is a flat hub path', hubUrl('hg38'), 'https://jbrowse.org/ucsc/hg38/config.json')
+check(
+  'a UCSC database name is a flat hub path',
+  hubUrl('hg38'),
+  'https://jbrowse.org/ucsc/hg38/config.json',
+)
 check(
   'a GenArk accession is sharded three deep',
   hubUrl('GCF_000001405.40'),
@@ -521,9 +533,15 @@ fs.writeFileSync(
         name: 'GENCODE',
         adapter: {
           type: 'Gff3TabixAdapter',
-          gffGzLocation: { uri: 'gencode.gff3.gz', locationType: 'UriLocation' },
+          gffGzLocation: {
+            uri: 'gencode.gff3.gz',
+            locationType: 'UriLocation',
+          },
           index: {
-            location: { uri: 'elsewhere/gencode.csi', locationType: 'UriLocation' },
+            location: {
+              uri: 'elsewhere/gencode.csi',
+              locationType: 'UriLocation',
+            },
             indexType: 'CSI',
           },
         },
@@ -634,7 +652,8 @@ const fromHub = buildConfig({
   assembly: 'hg38',
   hubAssembly: structuredClone(HUB),
   predictionRef: 'prediction.gff.gz',
-  referenceRef: 'https://jbrowse.org/ucsc/hg38/gencode.v49.annotation.sorted.gff3.gz',
+  referenceRef:
+    'https://jbrowse.org/ucsc/hg38/gencode.v49.annotation.sorted.gff3.gz',
   referenceCsi: true,
   rnaRefs: [],
 })

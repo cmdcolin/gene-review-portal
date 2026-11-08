@@ -13,8 +13,8 @@ keystrokes over 35 cards made 56 of them; keyed reconciliation makes none, with
 no hand-written "repaint just this bit" path to keep correct.
 
 esbuild does both bundles at portal-build time, so nothing is checked in and
-there is no separate build step to forget. The client bundle is about 200 KB,
-68 KB over the wire.
+there is no separate build step to forget. The client bundle is about 200 KB, 68
+KB over the wire.
 
 ## Staging a lane, and the gap in it
 

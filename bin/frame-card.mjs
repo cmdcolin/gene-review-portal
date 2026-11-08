@@ -9,7 +9,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import puppeteer from 'puppeteer'
+import { launch } from 'puppeteer'
 
 import { serveStatic } from '../lib/serve.mjs'
 
@@ -66,7 +66,7 @@ if (!fs.existsSync(index)) {
 }
 
 const server = await serveStatic(opts.portal)
-const browser = await puppeteer.launch({
+const browser = await launch({
   headless: true,
   args: ['--no-sandbox'],
 })
@@ -89,7 +89,7 @@ try {
     ;[...document.querySelectorAll('button')]
       .find(b => b.textContent.trim().startsWith(label))
       ?.click()
-  }, CLASS_LABELS[cls] || 'All')
+  }, CLASS_LABELS[cls] ?? 'All')
 
   // The captures are inline data: URIs, so re-rendering the list decodes them
   // again rather than fetching anything a load event would cover.

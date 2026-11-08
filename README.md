@@ -22,8 +22,8 @@ npx serve ./portal
 ```
 
 Live example, built from the command in
-[`demos/`](https://jbrowse.org/demos/tiberius_review/): Tiberius on human
-chr22, read against the hub's GENCODE 49.
+[`demos/`](https://jbrowse.org/demos/tiberius_review/): Tiberius on human chr22,
+read against the hub's GENCODE 49.
 
 ![One card per flagged model: the prediction, the junctions that disagree, and
 the reference genes it was read against](docs/review-page-light.png)
@@ -69,9 +69,10 @@ whole deployment.
 
 The queue is meant to be read one card at a time, so it takes the keyboard:
 <kbd>j</kbd> and <kbd>k</kbd> move, <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> are
-keep / needs editing / reject on the card under the cursor, <kbd>o</kbd> opens it
-in JBrowse and <kbd>/</kbd> jumps to the search box. The same digit twice takes a
-verdict back off. **Keys** in the toolbar, or <kbd>?</kbd>, shows the list.
+keep / needs editing / reject on the card under the cursor, <kbd>o</kbd> opens
+it in JBrowse and <kbd>/</kbd> jumps to the search box. The same digit twice
+takes a verdict back off. **Keys** in the toolbar, or <kbd>?</kbd>, shows the
+list.
 
 Set **Unreviewed** as the verdict filter and the queue drains as it is judged,
 the cursor closing over each card that leaves.

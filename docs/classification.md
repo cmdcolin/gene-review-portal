@@ -45,16 +45,16 @@ chr22  50012765  50018574  g14001.t1:split          0  -
 ```
 
 | name                           | what it marks                                                     |
-| ------------------------------ | ------------------------------------------------------------------ |
-| `donor±N`                      | the acceptor matches a reference intron, the donor is N bp off     |
-| `acceptor±N`                   | the donor matches, the acceptor is N bp off                        |
-| `skips-N-exons`                | the intron swallows N whole reference exons                        |
-| `unannotated-pairing`          | both ends are reference splice sites, this pairing of them is not  |
-| `shifted±N`                    | the intron lies inside a reference intron sharing neither end      |
-| `intron-in-exon`               | the intron is cut inside a reference exon                          |
-| `novel-intron`                 | no reference intron nearby at all                                  |
-| `split`                        | a merged model's cut point: the gap between the genes it joined    |
-| `novel-locus` / `novel-coding` | the model's span, having no reference gene to disagree with        |
+| ------------------------------ | ----------------------------------------------------------------- |
+| `donor±N`                      | the acceptor matches a reference intron, the donor is N bp off    |
+| `acceptor±N`                   | the donor matches, the acceptor is N bp off                       |
+| `skips-N-exons`                | the intron swallows N whole reference exons                       |
+| `unannotated-pairing`          | both ends are reference splice sites, this pairing of them is not |
+| `shifted±N`                    | the intron lies inside a reference intron sharing neither end     |
+| `intron-in-exon`               | the intron is cut inside a reference exon                         |
+| `novel-intron`                 | no reference intron nearby at all                                 |
+| `split`                        | a merged model's cut point: the gap between the genes it joined   |
+| `novel-locus` / `novel-coding` | the model's span, having no reference gene to disagree with       |
 
 **Donor and acceptor are read in the direction of transcription**, not left to
 right. The donor is the intron's 5' end, so it is the record's `start` on a `+`
@@ -66,7 +66,7 @@ The same file rides in every capture and every live link as the
 **Disagreements** track, directly under the prediction, so the picture points at
 the junction rather than leaving a reviewer to find it. The reference annotation
 is the lane below, because a marked junction still does not say what the model
-disagrees *with*: a `split` names a cut point, and only the two reference genes
+disagrees _with_: a `split` names a cut point, and only the two reference genes
 either side of it say what was merged.
 
 **The BED reaches further than the page does.** Cards exist only for the four

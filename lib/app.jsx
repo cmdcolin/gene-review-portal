@@ -55,7 +55,7 @@ export function matches(card, { cls, verdictFilter, q, verdicts }) {
   if (cls !== 'all' && card.cls !== cls) {
     return false
   }
-  const v = verdicts[card.id] || ''
+  const v = verdicts[card.id] ?? ''
   if (verdictFilter === 'unreviewed' && v) {
     return false
   }
@@ -68,7 +68,7 @@ export function matches(card, { cls, verdictFilter, q, verdicts }) {
   }
   if (q) {
     const hay =
-      `${card.id} ${(card.genes || []).join(' ')} ${card.loc}`.toLowerCase()
+      `${card.id} ${(card.genes ?? []).join(' ')} ${card.loc}`.toLowerCase()
     if (!hay.includes(q.trim().toLowerCase())) {
       return false
     }
@@ -114,11 +114,11 @@ export function toTsv(cards, verdicts) {
       c.loc,
       c.nExons,
       c.strand,
-      (c.genes || []).join(';'),
-      verdicts[c.id] || 'unreviewed',
+      (c.genes ?? []).join(';'),
+      verdicts[c.id] ?? 'unreviewed',
     ]
     if (apollo) {
-      row.push(c.apollo || '')
+      row.push(c.apollo ?? '')
     }
     lines.push(row.join('\t'))
   }
@@ -130,7 +130,7 @@ export function toTsv(cards, verdicts) {
 // starts the queue from nothing.
 export function fromTsv(text, cards) {
   const rows = text.split(/\r?\n/).filter(l => l.trim())
-  const head = (rows.shift() || '').split('\t')
+  const head = (rows.shift() ?? '').split('\t')
   const idAt = head.indexOf('model_id')
   const vAt = head.indexOf('verdict')
   if (idAt === -1 || vAt === -1) {
@@ -296,7 +296,7 @@ export function App({ data }) {
   useEffect(() => {
     try {
       const saved = JSON.parse(
-        localStorage.getItem(storageKey(data.portalId)) || '{}',
+        localStorage.getItem(storageKey(data.portalId)) ?? '{}',
       )
       if (saved.verdicts) {
         setVerdicts(saved.verdicts)
@@ -501,8 +501,11 @@ export function App({ data }) {
 
   function importTsv(file) {
     const reader = new FileReader()
-    reader.onload = () => {
-      const res = fromTsv(String(reader.result), data.cards)
+    reader.addEventListener('load', () => {
+      const res = fromTsv(
+        typeof reader.result === 'string' ? reader.result : '',
+        data.cards,
+      )
       if (res.error) {
         say(res.error)
         return
@@ -524,14 +527,14 @@ export function App({ data }) {
             : ''
         }.`,
       )
-    }
+    })
     reader.readAsText(file)
   }
 
   const clsCounts = useMemo(() => {
     const out = {}
     for (const c of data.cards) {
-      out[c.cls] = (out[c.cls] || 0) + 1
+      out[c.cls] = (out[c.cls] ?? 0) + 1
     }
     return out
   }, [data.cards])
@@ -703,7 +706,7 @@ export function App({ data }) {
                 key={c.id}
                 card={c}
                 meta={data.classes[c.cls]}
-                verdict={verdicts[c.id] || ''}
+                verdict={verdicts[c.id] ?? ''}
                 current={c.id === cursor}
                 onVerdict={setVerdict}
                 onPick={setCursor}
