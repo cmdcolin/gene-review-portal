@@ -84,7 +84,18 @@
     "typescript/no-unnecessary-type-conversion": "off",
     "typescript/prefer-optional-chain": "error",
     "typescript/return-await": "off",
-    "typescript/no-floating-promises": "error",
+    "typescript/no-floating-promises": [
+      "error",
+      {
+        "allowForKnownSafeCalls": [
+          {
+            "from": "package",
+            "name": ["test", "it", "describe", "suite"],
+            "package": "node:test"
+          }
+        ]
+      }
+    ],
     "typescript/strict-boolean-expressions": "off",
     "typescript/no-explicit-any": "error",
     "typescript/no-unsafe-type-assertion": "error",
