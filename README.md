@@ -10,8 +10,6 @@ wrong. Comparing them against an existing annotation sorts the disagreements
 into four kinds, and only those need a person.
 
 ```bash
-pnpm install
-
 gene-review-portal \
   --prediction tiberius.gff3 \
   --reference gencode.v49.gff3 \
@@ -23,8 +21,17 @@ gene-review-portal \
 npx serve ./portal
 ```
 
-It needs `bgzip`, `tabix` and `samtools` on the PATH, plus the `jbrowse` CLI
-(`npm i -g @jbrowse/cli`) for `--with-app`.
+## Install
+
+```bash
+git clone https://github.com/cmdcolin/gene-review-portal
+cd gene-review-portal
+pnpm install
+npm link               # gene-review-portal
+npm i -g @jbrowse/cli  # jbrowse, for --with-app
+```
+
+It also needs `bgzip`, `tabix` and `samtools` on the PATH.
 [`@jbrowse/capture`](https://www.npmjs.com/package/@jbrowse/capture) takes the
 screenshots; `--no-capture` builds the same page with links and no pictures.
 
