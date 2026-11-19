@@ -1,13 +1,13 @@
-// Rebuild the README's two screenshots. Nothing else reads them, and they go
-// stale the moment the page changes, so the command that makes them is checked
-// in beside them rather than living in somebody's shell history.
+// Rebuild the README's screenshots, in light mode. Nothing else reads them, and
+// they go stale the moment the page changes, so the command that makes them is
+// checked in beside them rather than living in somebody's shell history.
 //
 //   node docs/shoot.mjs                       # jbrowse create, needs the network
 //   node docs/shoot.mjs <jbrowse-web/build>   # a build you already have
 //
-// The portal is pnpm test's own fixture, so the models in the pictures are the
-// ones the suite asserts about, and the captures are a real JBrowse. Needs
-// puppeteer, same as test/browser.mjs.
+// The first is pnpm test's own fixture, so the models in the picture are the
+// ones the suite asserts about, and the captures are a real JBrowse. The second
+// is the hosted Tiberius demo. Needs puppeteer, same as test/browser.mjs.
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -62,17 +62,27 @@ const browser = await launch({
   headless: true,
   args: ['--no-sandbox'],
 })
-for (const scheme of ['light', 'dark']) {
+const lightPage = async () => {
   const page = await browser.newPage()
   await page.emulateMediaFeatures([
-    { name: 'prefers-color-scheme', value: scheme },
+    { name: 'prefers-color-scheme', value: 'light' },
   ])
   await page.setViewport({ width: 1280, height: 852 })
+  return page
+}
+const save = async (page, name) => {
+  const file = path.join(HERE, name)
+  await page.screenshot({ path: file })
+  console.log(
+    `${path.relative(process.cwd(), file)} ${fs.statSync(file).size} bytes`,
+  )
+  await page.close()
+}
+{
+  const page = await lightPage()
   await page.goto(`file://${path.join(portal, 'index.html')}`, {
     waitUntil: 'load',
   })
-  // verdicts persist per portalId, and both shots share one, so the second
-  // would otherwise open on the first one's marks
   await page.evaluate(() => {
     localStorage.clear()
   })
@@ -107,12 +117,14 @@ for (const scheme of ['light', 'dark']) {
     window.scrollTo(0, 0)
   })
   await new Promise(r => setTimeout(r, 400))
-  const file = path.join(HERE, `review-page-${scheme}.png`)
-  await page.screenshot({ path: file })
-  console.log(
-    `${path.relative(process.cwd(), file)} ${fs.statSync(file).size} bytes`,
-  )
-  await page.close()
+  await save(page, 'review-page.png')
+}
+{
+  const page = await lightPage()
+  await page.goto('https://jbrowse.org/demos/tiberius_review/', {
+    waitUntil: 'networkidle0',
+  })
+  await save(page, 'review-tiberius.png')
 }
 await browser.close()
 fs.rmSync(tmp, { recursive: true, force: true })

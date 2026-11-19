@@ -10,6 +10,8 @@ wrong. Comparing them against an existing annotation sorts the disagreements
 into four kinds, and only those need a person.
 
 ```bash
+pnpm install
+
 gene-review-portal \
   --prediction tiberius.gff3 \
   --reference gencode.v49.gff3 \
@@ -21,79 +23,47 @@ gene-review-portal \
 npx serve ./portal
 ```
 
-Live example, built from the command in
-[`demos/`](https://jbrowse.org/demos/tiberius_review/): Tiberius on human chr22,
-read against the hub's GENCODE 49.
-
-![One card per flagged model: the prediction, the junctions that disagree, and
-the reference genes it was read against](docs/review-page-light.png)
-
-The page follows the reader's theme:
-
-![The same page in dark mode](docs/review-page-dark.png)
-
-Both are `pnpm test`'s own fixture; `docs/shoot.mjs` rebuilds them.
-
-## Install
-
-```bash
-pnpm install
-```
-
-React, react-dom and esbuild build the review page.
-[`@jbrowse/capture`](https://www.npmjs.com/package/@jbrowse/capture) takes the
-screenshots — it knows when a JBrowse has finished drawing, which is the
-difference between a directory of screenshots and a directory of pictures of
-empty browsers — and brings puppeteer with it. `--no-capture` skips it, for the
-same page with links and no pictures.
-
-Also needed on PATH: `bgzip`, `tabix` and `samtools`, plus the `jbrowse` CLI
+It needs `bgzip`, `tabix` and `samtools` on the PATH, plus the `jbrowse` CLI
 (`npm i -g @jbrowse/cli`) for `--with-app`.
+[`@jbrowse/capture`](https://www.npmjs.com/package/@jbrowse/capture) takes the
+screenshots; `--no-capture` builds the same page with links and no pictures.
 
-## What comes out
+## Gallery
 
-```
-portal/
-  index.html      the review page — filters, verdicts, export
-  config.json     a JBrowse config naming the data below
-  data/           bgzipped and indexed copies of your inputs, plus
-                  conflicts.bed — every junction that differs
-  img/            one capture per candidate
-  jbrowse/        JBrowse itself, with --with-app
-```
+[Tiberius on human chr22](https://jbrowse.org/demos/tiberius_review/), read
+against GENCODE 49: a merged model, with the junctions that disagree and the
+reference genes it spans.
 
-Nothing points outside the directory, so `aws s3 sync portal/ s3://…` is the
-whole deployment.
+![A merged Tiberius model on chr22 over two GENCODE genes](docs/review-tiberius.png)
 
-## Reviewing
+The test fixture, mid-review: one card judged, the cursor on the next.
 
-The queue is meant to be read one card at a time, so it takes the keyboard:
-<kbd>j</kbd> and <kbd>k</kbd> move, <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> are
-keep / needs editing / reject on the card under the cursor, <kbd>o</kbd> opens
-it in JBrowse and <kbd>/</kbd> jumps to the search box. The same digit twice
-takes a verdict back off. **Keys** in the toolbar, or <kbd>?</kbd>, shows the
-list.
-
-Set **Unreviewed** as the verdict filter and the queue drains as it is judged,
-the cursor closing over each card that leaves.
-
-Verdicts live in the reviewer's browser (`localStorage`) — one browser, one
-machine. **Export** writes them out as TSV for a pipeline and **Import** reads
-that TSV back, so a second reviewer, a second laptop or cleared site data is not
-a review started again from nothing.
+![The fixture portal with one card marked needs editing](docs/review-page.png)
 
 ## Documentation
 
-- [How the page is built](docs/architecture.md) — the React/esbuild pipeline
-- [How a model gets flagged](docs/classification.md) — the classifier and
+- [How a model gets flagged](docs/classification.md): the four classes and
   `conflicts.bed`
-- [Evidence and Apollo](docs/evidence-and-apollo.md) — `--rnaseq`, and handing a
+- [Reviewing](docs/reviewing.md): keys, export and import, what comes out
+- [Evidence and Apollo](docs/evidence-and-apollo.md): `--rnaseq`, and handing a
   flagged model to an annotation editor
-- [Flags worth knowing](docs/flags.md)
-- [Naming an assembly instead of assembling one](docs/hubs.md) — `--hub` and
+- [Flags worth knowing](docs/flags.md): including `--hub` and
   `--reference-track`
-- [What this does not do](docs/known-limitations.md) — Apollo, link size, memory
-- [Test](docs/testing.md) — `pnpm test`
+- [What this does not do](docs/known-limitations.md): Apollo, link size, memory
+
+[DEVELOPMENT.md](DEVELOPMENT.md) covers tests, screenshots and how the page is
+built.
+
+## See also
+
+- [variant-review-portal](https://github.com/cmdcolin/variant-review-portal),
+  the same review page for VCF callsets
+- [Reviewing a gene prediction (Tiberius)](https://jbrowse.org/jb2/docs/tutorials/gene_prediction_review/),
+  the JBrowse tutorial built on this
+- [Screenshot a live view](https://jbrowse.org/jb2/docs/jbrowse-capture/), the
+  `@jbrowse/capture` that takes the cards' pictures
+- [Gene track](https://jbrowse.org/jb2/docs/user_guides/gene_track/) and
+  [RNA-seq](https://jbrowse.org/jb2/docs/tutorials/rnaseq/) guides
 
 ## License
 
