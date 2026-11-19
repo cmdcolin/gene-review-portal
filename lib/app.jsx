@@ -91,6 +91,27 @@ export function tallyVerdicts(cards, verdicts) {
   return c
 }
 
+/**
+ * The models whose verdict differs from the last export, or from what an
+ * import brought in: the work that lives only in this browser.
+ */
+export function unexported(cards, verdicts, exported) {
+  return cards.filter(({ id }) => verdicts[id] !== exported[id]).length
+}
+
+/** `changes` over `prev`, a null taking the entry off */
+export function mergeEdits(prev, changes) {
+  const next = { ...prev }
+  for (const [id, value] of Object.entries(changes)) {
+    if (value) {
+      next[id] = value
+    } else {
+      delete next[id]
+    }
+  }
+  return next
+}
+
 export function toTsv(cards, verdicts) {
   const apollo = cards.some(c => c.apollo)
   // an annotator picking the queue up in Apollo wants the link, not the locus
@@ -279,7 +300,9 @@ export function App({ data }) {
   // Verdicts start empty on both sides of hydration and arrive from
   // localStorage on mount — the server has no way to know them, and rendering
   // a guess is a mismatch.
+  const [ready, setReady] = useState(false)
   const [verdicts, setVerdicts] = useState({})
+  const [exported, setExported] = useState({})
   const [keysOpen, setKeysOpen] = useState(false)
   const [cls, setCls] = useState('all')
   const [verdictFilter, setVerdictFilter] = useState('all')
@@ -298,30 +321,28 @@ export function App({ data }) {
       const saved = JSON.parse(
         localStorage.getItem(storageKey(data.portalId)) ?? '{}',
       )
-      if (saved.verdicts) {
-        setVerdicts(saved.verdicts)
-      }
-      if (saved.keys) {
-        setKeysOpen(true)
-      }
+      setVerdicts(saved.verdicts ?? {})
+      setExported(saved.exported ?? {})
+      setKeysOpen(!!saved.keys)
     } catch {
       /* private window, or site data blocked */
     }
+    setReady(true)
   }, [data.portalId])
 
-  const persist = useCallback(
-    (nextVerdicts, nextKeys) => {
-      try {
-        localStorage.setItem(
-          storageKey(data.portalId),
-          JSON.stringify({ verdicts: nextVerdicts, keys: nextKeys }),
-        )
-      } catch {
-        /* nothing to do; the page still works for this session */
-      }
-    },
-    [data.portalId],
-  )
+  useEffect(() => {
+    if (!ready) {
+      return
+    }
+    try {
+      localStorage.setItem(
+        storageKey(data.portalId),
+        JSON.stringify({ verdicts, exported, keys: keysOpen }),
+      )
+    } catch {
+      /* nothing to do; the page still works for this session */
+    }
+  }, [ready, data.portalId, verdicts, exported, keysOpen])
 
   const bind = useCallback((id, el) => {
     if (el) {
@@ -341,6 +362,10 @@ export function App({ data }) {
     [data.cards, verdicts],
   )
   const done = counts.keep + counts.edit + counts.reject
+  const pending = useMemo(
+    () => unexported(data.cards, verdicts, exported),
+    [data.cards, verdicts, exported],
+  )
 
   useEffect(() => {
     if (!wantScroll.current) {
@@ -375,15 +400,13 @@ export function App({ data }) {
         setCursor(successor?.id ?? null)
       }
       setVerdicts(next)
-      persist(next, keysOpen)
     },
-    [verdicts, data.cards, cls, verdictFilter, q, visible, persist, keysOpen],
+    [verdicts, data.cards, cls, verdictFilter, q, visible],
   )
 
   const toggleKeys = useCallback(() => {
-    setKeysOpen(!keysOpen)
-    persist(verdicts, !keysOpen)
-  }, [keysOpen, persist, verdicts])
+    setKeysOpen(open => !open)
+  }, [])
 
   const move = useCallback(
     step => {
@@ -497,6 +520,7 @@ export function App({ data }) {
     setTimeout(() => {
       URL.revokeObjectURL(a.href)
     }, 1000)
+    setExported(verdicts)
   }
 
   function importTsv(file) {
@@ -510,16 +534,8 @@ export function App({ data }) {
         say(res.error)
         return
       }
-      const next = { ...verdicts }
-      for (const [id, v] of Object.entries(res.changes)) {
-        if (v === null) {
-          delete next[id]
-        } else {
-          next[id] = v
-        }
-      }
-      setVerdicts(next)
-      persist(next, keysOpen)
+      setVerdicts(prev => mergeEdits(prev, res.changes))
+      setExported(prev => mergeEdits(prev, res.changes))
       say(
         `${res.applied} verdict${res.applied === 1 ? '' : 's'} read in${
           res.unknown
@@ -562,12 +578,21 @@ export function App({ data }) {
           <span>
             <b>{data.flagged}</b> flagged
           </span>
+          {data.cards.length < data.flagged ? (
+            <span
+              id="left-out"
+              title="Rebuild with a larger --max to carry every flagged model"
+            >
+              <b>{data.flagged - data.cards.length}</b> not in this portal
+            </span>
+          ) : null}
         </span>
         <div className="progress">
           <div className="r">
             <span id="done">
               {done} of {data.cards.length} judged
             </span>
+
             <span id="tally">
               {counts.keep} keep · {counts.edit} edit · {counts.reject} reject
             </span>
@@ -608,8 +633,18 @@ export function App({ data }) {
               e.target.value = ''
             }}
           />
-          <button id="export" type="button" onClick={exportTsv}>
-            Export
+          <button
+            id="export"
+            type="button"
+            data-pending={pending > 0}
+            title={
+              pending
+                ? `${pending} verdict${pending === 1 ? '' : 's'} since the last export live only in this browser`
+                : 'Download every verdict as TSV'
+            }
+            onClick={exportTsv}
+          >
+            Export{pending ? ` · ${pending} new` : ''}
           </button>
           <button
             id="reset"
@@ -620,7 +655,7 @@ export function App({ data }) {
                 return
               }
               setVerdicts({})
-              persist({}, keysOpen)
+              setExported({})
             }}
           >
             Reset

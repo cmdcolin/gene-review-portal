@@ -320,6 +320,11 @@ await check(
   () => text('#done'),
   '3 of 5 judged',
 )
+await check(
+  'and Export counts them, since no export holds them yet',
+  () => text('#export'),
+  'Export · 3 new',
+)
 
 // A rerun with a smaller --max keeps the portalId, so the earlier verdicts are
 // still in storage. Counting them reads as more judged than there are cards.
@@ -386,6 +391,11 @@ await check(
   () => text('#msg'),
   '3 verdicts read in, 1 for models this portal does not carry.',
 )
+
+await page.click('#export')
+await check('an export clears the count', () => text('#export'), 'Export')
+await page.reload({ waitUntil: 'load' })
+await check('and it stays clear', () => text('#export'), 'Export')
 
 // Hydration is only clean if the string the generator rendered matches what the
 // browser builds from the same data — a mismatch is a console error, and this

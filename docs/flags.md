@@ -14,6 +14,8 @@
   against. A shorter frame cuts the reference off, and the picture stops saying
   what the model disagrees _with_. `--rnaseq` lanes sit below those and want a
   taller one again: `--rnaseq-height 170` inside `--height 920` shows two whole.
+- `--max` caps the cards a class, 12 by default. The header counts the flagged
+  models it left out, and a review meant to finish the callset wants it raised.
 - `--region` restricts the scan, repeatable. A whole mammalian genome is a lot
   of captures; one chromosome is a demo.
 - `--hub <name>` and `--reference-track <id>` — see

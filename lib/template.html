@@ -84,6 +84,14 @@
         color: CanvasText;
         font-variant-numeric: tabular-nums;
       }
+      #left-out,
+      #left-out b,
+      #export[data-pending='true'] {
+        color: var(--edit);
+      }
+      #export[data-pending='true'] {
+        border-color: var(--edit);
+      }
       .progress {
         width: 230px;
         display: flex;
