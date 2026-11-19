@@ -89,9 +89,6 @@
       #export[data-pending='true'] {
         color: var(--edit);
       }
-      #export[data-pending='true'] {
-        border-color: var(--edit);
-      }
       .progress {
         width: 230px;
         display: flex;
@@ -148,34 +145,17 @@
 
       button,
       select,
-      input[type='search'] {
+      input {
         font: inherit;
         font-size: 13px;
-        padding: 5px 10px;
-        border: 1px solid ButtonBorder;
-        border-radius: 6px;
-        background: Canvas;
-        color: CanvasText;
-      }
-      select,
-      input[type='search'] {
-        background: Field;
-        color: FieldText;
       }
       input[type='search'] {
         min-width: 190px;
       }
-      button {
-        cursor: pointer;
-      }
-      button:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-        color: GrayText;
-      }
-      .filters button[aria-pressed='true'] {
+      button[aria-pressed='true'] {
         background: var(--cls, var(--accent));
-        border-color: var(--cls, var(--accent));
+        border: 1px solid var(--cls, var(--accent));
+        border-radius: 4px;
         color: var(--on-accent);
       }
       /* 9 → 10 → 100 all draw in the same box, so a verdict does not reflow the
@@ -239,36 +219,23 @@
       .cards {
         display: flex;
         flex-direction: column;
-        gap: 18px;
       }
-      /* The class stripe is always 5px and only its COLOUR says which class: a
-         border is layout, so growing one on a verdict would reflow the card. */
       .card {
-        border: 1px solid var(--verdict, ButtonBorder);
-        border-left: 5px solid var(--cls, ButtonBorder);
-        border-radius: 8px;
-        overflow: hidden;
-      }
-      .card[data-verdict='keep'] {
-        --verdict: var(--keep);
-      }
-      .card[data-verdict='edit'] {
-        --verdict: var(--edit);
-      }
-      .card[data-verdict='reject'] {
-        --verdict: var(--reject);
+        border-top: 1px solid ButtonBorder;
+        border-left: 3px solid transparent;
+        padding: 14px 0 14px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
       }
       .card[data-current='true'] {
-        outline: 2px solid var(--accent);
-        outline-offset: 2px;
+        border-left-color: CanvasText;
       }
       .card-head {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px 14px;
+        gap: 4px 12px;
         align-items: baseline;
-        padding: 10px 14px;
-        border-bottom: 1px solid ButtonBorder;
       }
       .chip {
         padding: 1px 8px;
@@ -294,12 +261,10 @@
         font-variant-numeric: tabular-nums;
       }
       .why {
-        padding: 10px 14px 0;
         color: GrayText;
         max-width: 78ch;
       }
       .detail {
-        padding: 4px 14px 0;
         font-size: 13px;
         max-width: 78ch;
       }
@@ -312,16 +277,9 @@
         display: block;
         width: 100%;
         height: auto;
-        margin-top: 10px;
-        border-top: 1px solid ButtonBorder;
-        border-bottom: 1px solid ButtonBorder;
-        background: #fff;
       }
       .missing {
-        margin-top: 10px;
-        padding: 20px 14px;
-        border-top: 1px solid ButtonBorder;
-        border-bottom: 1px solid ButtonBorder;
+        padding: 20px 0;
         color: GrayText;
         font-size: 13px;
       }
@@ -330,35 +288,19 @@
         flex-wrap: wrap;
         gap: 8px 14px;
         align-items: center;
-        padding: 10px 14px;
       }
       .verdicts {
         display: flex;
         gap: 6px;
       }
       .verdicts button[data-v='keep'] {
-        border-color: var(--keep);
-        color: var(--keep);
+        --cls: var(--keep);
       }
       .verdicts button[data-v='edit'] {
-        border-color: var(--edit);
-        color: var(--edit);
+        --cls: var(--edit);
       }
       .verdicts button[data-v='reject'] {
-        border-color: var(--reject);
-        color: var(--reject);
-      }
-      .verdicts button[aria-pressed='true'] {
-        color: var(--on-accent);
-      }
-      .verdicts button[aria-pressed='true'][data-v='keep'] {
-        background: var(--keep);
-      }
-      .verdicts button[aria-pressed='true'][data-v='edit'] {
-        background: var(--edit);
-      }
-      .verdicts button[aria-pressed='true'][data-v='reject'] {
-        background: var(--reject);
+        --cls: var(--reject);
       }
       .next {
         font-size: 13px;
@@ -375,14 +317,7 @@
       a.live {
         font-size: 13px;
         color: LinkText;
-        text-decoration: none;
-        border: 1px solid ButtonBorder;
-        border-radius: 6px;
-        padding: 5px 12px;
         white-space: nowrap;
-      }
-      a.live.apollo {
-        border-color: var(--accent);
       }
       .empty {
         color: GrayText;

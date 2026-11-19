@@ -7,9 +7,9 @@
 | novel locus        | exons hit nothing annotated                                                   | assess, then create     |
 | novel coding       | exons hit only non-coding annotation                                          | assess coding potential |
 
-Everything else is `agrees` and never reaches the page. Each class carries its
-own color through the chip, the filter and the card's left stripe, so a card
-says which kind of disagreement it is before its label is read.
+Everything else is `agrees` and never reaches the page. Each class has its own
+color, on the chip of every card in it and on its filter button once picked, so
+a card says which kind of disagreement it is before its label is read.
 
 **The comparison is at exon level, against same-strand genes only.** Span
 overlap is the obvious test and it is wrong twice over: a gene nested in
