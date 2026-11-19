@@ -53,9 +53,9 @@ execFileSync(
   { stdio: 'inherit' },
 )
 
-// 852 ends the frame on the first card's bottom edge, with the second one's
-// stripe just showing — a queue rather than a single card, and no ragged cut
-// through the middle of a capture.
+// 852 ends the frame on the second card's heading, with the cursor bar beside
+// it — a queue rather than a single card, and no ragged cut through the middle
+// of a capture.
 const current = id => `.card[data-id="${id}"][data-current]`
 
 const browser = await launch({
