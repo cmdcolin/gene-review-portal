@@ -1,47 +1,30 @@
 # Evidence
 
-`--rnaseq <bam>` adds an alignments track, repeatable. It appears in every
-capture and every live link, under the prediction and the reference, which is
-what turns "the reference says nothing here" into a judgement: a novel locus
-with reads across its exons is a candidate gene, and one without them is a
-candidate false positive.
-
-Tiberius has an evidence mode of its own (Nextflow, taking proteins, RNA-Seq and
-Iso-Seq) that folds evidence into the prediction. This track is the other half —
-the same class of data, kept beside the model rather than inside it, so the
-reviewer sees what the call was made against.
+`--rnaseq <bam>` adds an alignments track, repeatable, to every capture and live
+link, under the prediction and the reference. A novel locus with reads across
+its exons is a candidate gene, and one without them a candidate false positive.
 
 ## Apollo
 
-The triage is the browser's half. The edit belongs in an annotation editor:
-**Split into two models** is not a viewer action.
-
-There are two Apollo deployments and the links differ, so pick by which one you
-have.
+The edit a card asks for, such as **Split into two models**, belongs in an
+annotation editor. The portal links to Apollo 3 in one of two ways.
 
 ### Without a server
 
-Apollo stores annotations on a collaboration server only when the assembly names
-an internet account. Without one it uses its local backend and keeps them in the
-browser's IndexedDB, which needs nothing stood up:
+With no internet account in the assembly, Apollo keeps annotations in the
+browser's IndexedDB, so nothing needs standing up:
 
 ```bash
 gene-review-portal … --apollo-local --public-config https://example.org/portal/config.json
 ```
 
-Each card's link carries the portal's own config and the model itself, gzipped
-into Apollo's `apolloFeatures` parameter, so the reviewer arrives with the
-prediction already in the editable track rather than with an empty one. The
-config it points at has to load the Apollo plugin and declare no
-`internetAccounts`; https://jbrowse.org/demos/apollo3/config.json is a working
-one to copy.
-
-`--public-config` is required, because the link carries the config URL and there
-is no server holding one.
-
-**The edits live in that browser and nowhere else.** Clearing site data for the
-host loses them, and nothing syncs. **Download GFF3** in the Apollo menu is the
-durable output.
+- Each card's link carries the model, gzipped into Apollo's `apolloFeatures`
+  parameter, so the reviewer arrives with it already in the editable track.
+- `--public-config` is required: the link carries the config's URL. That config
+  loads the Apollo plugin and declares no `internetAccounts`;
+  https://jbrowse.org/demos/apollo3/config.json is one to copy.
+- **The edits live in that browser alone.** Clearing site data loses them, and
+  nothing syncs. **Download GFF3** in the Apollo menu is the durable output.
 
 ### Against a collaboration server
 
@@ -53,15 +36,8 @@ Every card then carries an **Edit in Apollo** link that opens the same window in
 [Apollo 3](https://github.com/GMOD/Apollo3), and `Export` gains an `apollo_url`
 column, so a triaged queue hands over as a spreadsheet of links.
 
-Two things Apollo names differently:
-
-- `--apollo-assembly <name>` when Apollo's name for the assembly is not
-  `--assembly`. Apollo takes its assemblies from its own server, so the two
-  namespaces often disagree.
-- `--apollo-track <trackId>` to open Apollo's annotation layer with the view.
-  **Default is no track**, on purpose: Apollo is a JBrowse plugin, so a link is
-  an ordinary session spec, and it adds `apollo_track_<assembly>` from a
-  reaction that runs _after_ the session is parsed. A link naming a track that
-  the Apollo server's config does not itself declare fails to open at all, where
-  a link naming none arrives at the right locus and leaves the annotator one
-  click from their own layer.
+- `--apollo-assembly <name>` when Apollo's name for the assembly, from its own
+  server, is not `--assembly`.
+- `--apollo-track <trackId>` opens Apollo's annotation layer with the view. By
+  default the link names no track, because a link naming one the Apollo server's
+  config does not declare fails to open at all.

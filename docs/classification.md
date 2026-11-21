@@ -8,35 +8,20 @@
 | novel coding       | exons hit only non-coding annotation                                          | assess coding potential |
 
 Everything else is `agrees` and never reaches the page. Each class has its own
-color, on the chip of every card in it and on its filter button once picked, so
-a card says which kind of disagreement it is before its label is read.
+color, on its cards' chips and its filter button.
 
-**The comparison is at exon level, against same-strand genes only.** Span
-overlap is the obvious test and it is wrong twice over: a gene nested in
-another's intron shares the whole span and no exon, and two overlapping
-same-strand genes are a fact about the reference rather than a prediction error.
-On real chr22 data the span test called Tiberius's correct PI4KA model a
-two-gene fusion, because SERPIND1 sits inside PI4KA's intron. Readthrough genes
-(`CHKB-CPT1B`) are excluded for the same reason.
-
-The classifier prefers `exon` features and falls back to `CDS` per model, since
-plenty of annotation files carry only one of the two.
-
-**A gene's junctions are read one isoform at a time and then unioned.** Sorting
-every isoform's exons into one list and joining consecutive pairs is the obvious
-shortcut, and it invents junctions no transcript has: across RANBP1's 13
-isoforms it matched none of Tiberius's five correct junctions. That shortcut was
-what 18 of the 21 structure conflicts first reported on human chr22 turned out
-to be.
+- **Exons, same strand.** A model is compared by exon against same-strand genes
+  only, so a gene nested in another's intron (SERPIND1 in PI4KA) is no fusion,
+  and readthrough genes (`CHKB-CPT1B`) are left out.
+- **`exon`, else `CDS`.** The classifier reads `exon` features and falls back to
+  `CDS` per model.
+- **Isoform by isoform.** A gene's junctions are read one isoform at a time and
+  then unioned, so no junction is counted that no transcript has.
 
 ## Where the disagreement is
 
-A capture of a structure conflict shows a plausible-looking model over a stack
-of reference isoforms, and nothing says which junction is the one in dispute. So
-the classifier also writes down where it looked.
-
-`data/conflicts.bed` is one BED6 record per place a model and the reference
-actually differ, named `<transcript>:<what disagrees>`:
+`data/conflicts.bed` holds one BED6 record per place a model and the reference
+differ, named `<transcript>:<what disagrees>`:
 
 ```
 chr22  21636314  21636431  g13605.t1:donor-1048     0  +
@@ -56,20 +41,12 @@ chr22  50012765  50018574  g14001.t1:split          0  -
 | `split`                        | a merged model's cut point: the gap between the genes it joined   |
 | `novel-locus` / `novel-coding` | the model's span, having no reference gene to disagree with       |
 
-**Donor and acceptor are read in the direction of transcription**, not left to
-right. The donor is the intron's 5' end, so it is the record's `start` on a `+`
-model and its `end` on a `-` one — which is why the row above, on the minus
-strand, names the right-hand end. Naming the two sites by coordinate instead
-puts every minus-strand edit at the wrong end of its intron.
-
-The same file rides in every capture and every live link as the
-**Disagreements** track, directly under the prediction, so the picture points at
-the junction rather than leaving a reviewer to find it. The reference annotation
-is the lane below, because a marked junction still does not say what the model
-disagrees _with_: a `split` names a cut point, and only the two reference genes
-either side of it say what was merged.
-
-**The BED reaches further than the page does.** Cards exist only for the four
-flagged classes, and a model sharing four junctions out of five is filed as
-`agrees` and never gets one — while the fifth is still a real splice-site edit.
-On chr22 that is 58 models the page cannot show and the BED lists.
+- **Donor and acceptor follow transcription.** The donor is the intron's 5' end:
+  the record's `start` on a `+` model and its `end` on a `-` one, as in the
+  minus-strand row above.
+- **It is a track.** Every capture and live link shows it as **Disagreements**,
+  under the prediction and above the reference, so the picture points at the
+  junction and the lane below says what it disagrees _with_.
+- **It reaches further than the page.** A model sharing four of five junctions
+  is `agrees` and gets no card, yet its fifth is still an edit. On chr22 the BED
+  lists 58 such models.

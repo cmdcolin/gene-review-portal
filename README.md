@@ -51,7 +51,8 @@ The test fixture, mid-review: one card judged, the cursor on the next.
 
 - [How a model gets flagged](docs/classification.md): the four classes and
   `conflicts.bed`
-- [Reviewing](docs/reviewing.md): keys, export and import, what comes out
+- [Reviewing](docs/reviewing.md): keys, your own question, export and import,
+  what comes out
 - [Evidence and Apollo](docs/evidence-and-apollo.md): `--rnaseq`, and handing a
   flagged model to an annotation editor
 - [Flags worth knowing](docs/flags.md): including `--hub` and
