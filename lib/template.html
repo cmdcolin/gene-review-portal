@@ -113,13 +113,16 @@
       .bar span {
         height: 100%;
       }
-      .b-keep {
+      .bar span {
+        background: var(--accent);
+      }
+      .bar span[data-tone='real'] {
         background: var(--keep);
       }
-      .b-edit {
+      .bar span[data-tone='unsure'] {
         background: var(--edit);
       }
-      .b-reject {
+      .bar span[data-tone='artifact'] {
         background: var(--reject);
       }
 
@@ -291,16 +294,35 @@
       }
       .verdicts {
         display: flex;
+        flex-wrap: wrap;
         gap: 6px;
+        align-items: center;
       }
-      .verdicts button[data-v='keep'] {
+      .verdicts .question {
+        font-size: 13px;
+        font-weight: 600;
+        margin-right: 4px;
+      }
+      .verdicts kbd {
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+        opacity: 0.6;
+        margin-right: 5px;
+      }
+      .verdicts .unanswer {
+        margin-left: 6px;
+      }
+      .verdicts button[data-tone='real'] {
         --cls: var(--keep);
       }
-      .verdicts button[data-v='edit'] {
+      .verdicts button[data-tone='unsure'] {
         --cls: var(--edit);
       }
-      .verdicts button[data-v='reject'] {
+      .verdicts button[data-tone='artifact'] {
         --cls: var(--reject);
+      }
+      .verdicts button[data-tone='accent'] {
+        --cls: var(--accent);
       }
       .next {
         font-size: 13px;

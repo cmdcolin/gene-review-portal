@@ -3,19 +3,7 @@
 // script runs, and again in the browser to hydrate the parts that take input.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-export const VERDICTS = [
-  { v: 'keep', label: 'Keep', key: '1' },
-  { v: 'edit', label: 'Needs editing', key: '2' },
-  { v: 'reject', label: 'Reject', key: '3' },
-]
-
-const VERDICT_FILTERS = [
-  ['all', 'Any verdict'],
-  ['unreviewed', 'Unreviewed'],
-  ['keep', 'Keep'],
-  ['edit', 'Needs editing'],
-  ['reject', 'Reject'],
-]
+import { CLEAR_KEY, QUESTION, VERDICTS } from './answers.mjs'
 
 const num = n => Math.abs(n).toLocaleString()
 
@@ -80,11 +68,11 @@ export function matches(card, { cls, verdictFilter, q, verdicts }) {
 // portalId, so the earlier verdicts are still in storage, and counting them
 // reads as "16 of 12 judged" over a bar past its own end — while dropping them
 // would throw away a review the next wider rerun could still use.
-export function tallyVerdicts(cards, verdicts) {
-  const c = { keep: 0, edit: 0, reject: 0 }
+export function tallyVerdicts(cards, verdicts, choices) {
+  const c = Object.fromEntries(choices.map(b => [b.v, 0]))
   for (const card of cards) {
     const v = verdicts[card.id]
-    if (c[v] !== undefined) {
+    if (Object.hasOwn(c, v)) {
       c[v]++
     }
   }
@@ -149,7 +137,7 @@ export function toTsv(cards, verdicts) {
 // The other half of Export: verdicts live in one browser's localStorage, so
 // without this a cleared site setting, a second reviewer or a second machine
 // starts the queue from nothing.
-export function fromTsv(text, cards) {
+export function fromTsv(text, cards, choices) {
   const rows = text.split(/\r?\n/).filter(l => l.trim())
   const head = (rows.shift() ?? '').split('\t')
   const idAt = head.indexOf('model_id')
@@ -158,6 +146,7 @@ export function fromTsv(text, cards) {
     return { error: 'That file has no model_id and verdict columns.' }
   }
   const known = new Set(cards.map(c => c.id))
+  const allowed = new Set(choices.map(b => b.v))
   const changes = {}
   let applied = 0
   let unknown = 0
@@ -170,7 +159,7 @@ export function fromTsv(text, cards) {
     }
     if (v === 'unreviewed' || v === '') {
       changes[id] = null
-    } else if (v === 'keep' || v === 'edit' || v === 'reject') {
+    } else if (allowed.has(v)) {
       changes[id] = v
     } else {
       continue
@@ -208,6 +197,8 @@ const Detail = React.memo(function Detail({ conflicts }) {
 const Card = React.memo(function Card({
   card,
   meta,
+  question,
+  choices,
   verdict,
   current,
   onVerdict,
@@ -257,21 +248,40 @@ const Card = React.memo(function Card({
         </div>
       )}
       <div className="card-foot">
-        <div className="verdicts">
-          {VERDICTS.map(b => (
+        <div className="verdicts" role="group" aria-labelledby={`q-${card.id}`}>
+          <span className="question" id={`q-${card.id}`}>
+            {question}
+          </span>
+          {choices.map(b => (
             <button
               key={b.v}
               type="button"
               data-v={b.v}
+              data-tone={b.tone}
+              title={b.title}
               aria-pressed={verdict === b.v}
               onClick={() => {
                 onPick(card.id)
                 onVerdict(card.id, b.v)
               }}
             >
+              <kbd>{b.key}</kbd>
               {b.label}
             </button>
           ))}
+          <button
+            type="button"
+            className="unanswer"
+            disabled={!verdict}
+            title="Take the answer back, leaving the model unreviewed"
+            onClick={() => {
+              onPick(card.id)
+              onVerdict(card.id, '')
+            }}
+          >
+            <kbd>{CLEAR_KEY}</kbd>
+            Clear
+          </button>
         </div>
         <span className="next">
           Annotator action: <b>{meta.action}</b>
@@ -297,6 +307,8 @@ const Card = React.memo(function Card({
 })
 
 export function App({ data }) {
+  const choices = data.verdicts ?? VERDICTS
+  const question = data.question ?? QUESTION
   // Verdicts start empty on both sides of hydration and arrive from
   // localStorage on mount — the server has no way to know them, and rendering
   // a guess is a mismatch.
@@ -321,14 +333,21 @@ export function App({ data }) {
       const saved = JSON.parse(
         localStorage.getItem(storageKey(data.portalId)) ?? '{}',
       )
-      setVerdicts(saved.verdicts ?? {})
+      const offered = new Set(choices.map(b => b.v))
+      setVerdicts(
+        Object.fromEntries(
+          Object.entries(saved.verdicts ?? {}).filter(([, v]) =>
+            offered.has(v),
+          ),
+        ),
+      )
       setExported(saved.exported ?? {})
       setKeysOpen(!!saved.keys)
     } catch {
       /* private window, or site data blocked */
     }
     setReady(true)
-  }, [data.portalId])
+  }, [data.portalId, choices])
 
   useEffect(() => {
     if (!ready) {
@@ -358,10 +377,10 @@ export function App({ data }) {
     [data.cards, cls, verdictFilter, q, verdicts],
   )
   const counts = useMemo(
-    () => tallyVerdicts(data.cards, verdicts),
-    [data.cards, verdicts],
+    () => tallyVerdicts(data.cards, verdicts, choices),
+    [data.cards, verdicts, choices],
   )
-  const done = counts.keep + counts.edit + counts.reject
+  const done = choices.reduce((n, b) => n + counts[b.v], 0)
   const pending = useMemo(
     () => unexported(data.cards, verdicts, exported),
     [data.cards, verdicts, exported],
@@ -383,10 +402,10 @@ export function App({ data }) {
   const setVerdict = useCallback(
     (id, val) => {
       const next = { ...verdicts }
-      if (next[id] === val) {
-        delete next[id]
-      } else {
+      if (val) {
         next[id] = val
+      } else {
+        delete next[id]
       }
 
       // Under a verdict filter the card just judged leaves the list. The cursor
@@ -467,8 +486,9 @@ export function App({ data }) {
         }
         return
       }
-      const hit = VERDICTS.find(b => b.key === e.key)
-      if (!hit) {
+      const answer =
+        e.key === CLEAR_KEY ? '' : choices.find(b => b.key === e.key)?.v
+      if (answer === undefined) {
         return
       }
       e.preventDefault()
@@ -480,13 +500,13 @@ export function App({ data }) {
         wantScroll.current = true
         setCursor(id)
       }
-      setVerdict(id, hit.v)
+      setVerdict(id, answer)
     }
     document.addEventListener('keydown', onKey)
     return () => {
       document.removeEventListener('keydown', onKey)
     }
-  }, [move, toggleKeys, setVerdict, visible, cursor])
+  }, [move, toggleKeys, setVerdict, visible, cursor, choices])
 
   // Changing a filter can also strand the cursor on a card that is no longer
   // listed; there is no position to hold on to, so it goes to the top.
@@ -529,6 +549,7 @@ export function App({ data }) {
       const res = fromTsv(
         typeof reader.result === 'string' ? reader.result : '',
         data.cards,
+        choices,
       )
       if (res.error) {
         say(res.error)
@@ -594,13 +615,19 @@ export function App({ data }) {
             </span>
 
             <span id="tally">
-              {counts.keep} keep · {counts.edit} edit · {counts.reject} reject
+              {choices
+                .map(b => `${counts[b.v]} ${b.label.toLowerCase()}`)
+                .join(' · ')}
             </span>
           </div>
           <div className="bar">
-            <span className="b-keep" style={{ width: pct(counts.keep) }} />
-            <span className="b-edit" style={{ width: pct(counts.edit) }} />
-            <span className="b-reject" style={{ width: pct(counts.reject) }} />
+            {choices.map(b => (
+              <span
+                key={b.v}
+                data-tone={b.tone}
+                style={{ width: pct(counts[b.v]) }}
+              />
+            ))}
           </div>
         </div>
         <div className="actions">
@@ -687,7 +714,11 @@ export function App({ data }) {
               setVerdictFilter(e.target.value)
             }}
           >
-            {VERDICT_FILTERS.map(([v, label]) => (
+            {[
+              ['all', 'Any verdict'],
+              ['unreviewed', 'Unreviewed'],
+              ...choices.map(b => [b.v, b.label]),
+            ].map(([v, label]) => (
               <option key={v} value={v}>
                 {label}
               </option>
@@ -714,7 +745,12 @@ export function App({ data }) {
             <kbd>k</kbd> move between cards
           </span>
           <span>
-            <kbd>1</kbd> keep <kbd>2</kbd> needs editing <kbd>3</kbd> reject
+            {choices.map(b => (
+              <React.Fragment key={b.v}>
+                <kbd>{b.key}</kbd> {b.label.toLowerCase()}{' '}
+              </React.Fragment>
+            ))}
+            <kbd>{CLEAR_KEY}</kbd> clear
           </span>
           <span>
             <kbd>o</kbd> open in JBrowse
@@ -741,6 +777,8 @@ export function App({ data }) {
                 key={c.id}
                 card={c}
                 meta={data.classes[c.cls]}
+                question={question}
+                choices={choices}
                 verdict={verdicts[c.id] ?? ''}
                 current={c.id === cursor}
                 onVerdict={setVerdict}

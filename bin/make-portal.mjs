@@ -9,6 +9,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
+import { QUESTION, readQuestion, VERDICTS } from '../lib/answers.mjs'
 import { apolloFeaturesParam, apolloLocalLink } from '../lib/apollo.mjs'
 import {
   absoluteLink,
@@ -103,6 +104,17 @@ OPTIONAL
   --region <refName>     restrict the scan to one contig, repeatable
   --max <n>              candidates kept per class (default 12)
   --title <text>         page heading
+  --question <json>      the question each card asks and the answers a
+                         reviewer picks from, in place of "What should happen
+                         to this model?" with Keep, Needs editing and Reject:
+                           { "question": "Is the model right?",
+                             "answers": [
+                               { "label": "Right", "tone": "real" },
+                               { "label": "Wrong", "tone": "artifact" } ] }
+                         An answer's "value", what the export writes, is its
+                         label unless given; its "key" is its place, 1 up,
+                         unless given; "tone" is real, unsure, artifact or
+                         accent; "title" is its tooltip
   --with-app             run \`jbrowse create\` so the portal ships its own copy
                          of JBrowse and needs no internet at all
   --app-branch <name>    bundle the development build from a git branch rather
@@ -168,6 +180,7 @@ const TEXT = {
   '--reference-track': 'referenceTrack',
   '--out': 'out',
   '--title': 'title',
+  '--question': 'question',
   '--instance': 'instance',
   '--measurement': 'measurement',
   '--public-config': 'publicConfig',
@@ -271,6 +284,15 @@ const fromHub = opts.hub ?? opts.assemblyFrom
 if (opts.help || !opts.prediction || !(opts.fasta || fromHub) || !opts.out) {
   usage()
   process.exit(opts.help ? 0 : 1)
+}
+let asked
+try {
+  asked = opts.question
+    ? readQuestion(fs.readFileSync(opts.question, 'utf8'))
+    : { question: QUESTION, choices: VERDICTS }
+} catch (e) {
+  console.error(`--question ${opts.question}: ${e.message}`)
+  process.exit(1)
 }
 if (opts.fasta && fromHub) {
   console.error(
@@ -695,6 +717,8 @@ const data = {
   tally,
   classes: CLASSES,
   classOrder: CLASS_ORDER,
+  question: asked.question,
+  verdicts: asked.choices,
   cards,
 }
 

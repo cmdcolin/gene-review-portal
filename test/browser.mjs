@@ -165,13 +165,25 @@ await check('the progress line counts it', () => text('#done'), '1 of 5 judged')
 await check(
   'and the tally names it',
   () => text('#tally'),
-  '1 keep · 0 edit · 0 reject',
+  '1 keep · 0 needs editing · 0 reject',
+)
+await check(
+  'the card asks its question before the answers',
+  () => text('.card[data-current] .verdicts'),
+  'What should happen to this model?1Keep2Needs editing3Reject0Clear',
 )
 await page.keyboard.press('1')
 await check(
-  'the same digit again takes the verdict off',
+  'the same digit again leaves the answer as it is',
   () => verdictOf(ids[0]),
-  '',
+  'keep',
+)
+await page.keyboard.press('0')
+await check('0 takes the answer off', () => verdictOf(ids[0]), '')
+await check(
+  'and Clear has nothing left to clear',
+  () => page.$eval('.card[data-current] .verdicts .unanswer', e => e.disabled),
+  true,
 )
 await check(
   'and the count comes back down',

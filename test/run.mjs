@@ -6,6 +6,7 @@ import os from 'node:os'
 import zlib from 'node:zlib'
 import path from 'node:path'
 
+import { readQuestion } from '../lib/answers.mjs'
 import { apolloFeaturesParam, apolloLocalLink } from '../lib/apollo.mjs'
 import {
   absoluteLink,
@@ -819,6 +820,53 @@ check(
   'the card is in the HTML before any script runs',
   page.includes('data-id="m1"'),
   true,
+)
+
+const asked = answers =>
+  JSON.stringify({ question: ' Is the model right? ', answers })
+const refusal = text => {
+  try {
+    readQuestion(text)
+    return 'accepted'
+  } catch (e) {
+    return e.message
+  }
+}
+check(
+  'an answer is valued by its label and keyed by its place unless given',
+  readQuestion(
+    asked([
+      { label: 'Right', tone: 'real' },
+      { label: 'Wrong', key: 'w' },
+    ]),
+  ),
+  {
+    question: 'Is the model right?',
+    choices: [
+      { v: 'Right', label: 'Right', key: '1', tone: 'real' },
+      { v: 'Wrong', label: 'Wrong', key: 'w' },
+    ],
+  },
+)
+check(
+  'an answer keyed to a key the page binds is refused',
+  refusal(asked([{ label: 'Junk', key: 'j' }])),
+  '"Junk" is keyed j, which the page binds to next card',
+)
+check(
+  'and so is one keyed to Clear',
+  refusal(asked([{ label: 'Zero', key: '0' }])),
+  '"Zero" is keyed 0, which the page binds to clear the answer',
+)
+check(
+  'two answers may not share a value',
+  refusal(asked([{ label: 'A' }, { label: 'B', value: 'A' }])),
+  'two answers share the value "A"',
+)
+check(
+  'a tone the page does not draw is refused',
+  refusal(asked([{ label: 'A', tone: 'red' }])),
+  '"A" has tone "red": give one of real, unsure, artifact, accent',
 )
 
 console.log(failures ? `\n${failures} failure(s)` : '\nall checks passed')
