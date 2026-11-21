@@ -1,21 +1,21 @@
 # Flags worth knowing
 
-`--help` lists every flag. These are the ones that bite.
+`--help` lists every flag. These are the ones whose effect is easy to miss.
 
 - Without `--with-app` the links point at `jbrowse.org/code/jb2/latest`, which
-  **cannot read a config on your laptop** — that mode is for data already
-  published at a public URL. The CLI says so when it applies.
+  **cannot read a config on your laptop**, so that mode is for a portal
+  published at a public URL. The CLI warns when it applies.
 - `--aliases <file|url>` is a refName alias table, for an annotation that says
   `chr22` over a FASTA that says `22`. Without it every capture fails with
   "unknown reference sequence name", which reads like a bad locus.
 - `--height` defaults to 450, which fits the prediction, disagreements and
   reference lanes; a shorter frame cuts the reference off. `--rnaseq` lanes need
   more: `--rnaseq-height 170` inside `--height 920` shows two whole.
-- `--max` caps the cards a class, 12 by default. The header counts the flagged
-  models it left out, and a review meant to finish the callset wants it raised.
-- `--region` restricts the scan, repeatable. A whole mammalian genome is a lot
-  of captures; one chromosome is a demo.
-- `--hub <name>` and `--reference-track <id>` — see
+- `--max` caps the cards a class, 12 by default, and with them the captures. The
+  header counts the flagged models it left out; raise it to review them all.
+- `--region` restricts the scan to a contig, repeatable, which bounds the
+  classifier's memory and time.
+- `--hub <name>` and `--reference-track <id>`: see
   [naming an assembly](#naming-an-assembly-instead-of-assembling-one) below.
 - `--measurement <prefix>` writes the run's counts as measurement records,
   `<prefix>-classes.json`, `-run.json`, and `-evidence.json` with `--rnaseq`, so

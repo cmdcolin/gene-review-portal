@@ -10,9 +10,9 @@
 Everything else is `agrees` and never reaches the page. Each class has its own
 color, on its cards' chips and its filter button.
 
-- **Exons, same strand.** A model is compared by exon against same-strand genes
-  only, so a gene nested in another's intron (SERPIND1 in PI4KA) is no fusion,
-  and readthrough genes (`CHKB-CPT1B`) are left out.
+- **Exons, same strand.** The classifier compares a model's exons with
+  same-strand genes only, so a gene nested in another's intron (SERPIND1 in
+  PI4KA) is no fusion, and readthrough genes (`CHKB-CPT1B`) are left out.
 - **`exon`, else `CDS`.** The classifier reads `exon` features and falls back to
   `CDS` per model.
 - **Isoform by isoform.** A gene's junctions are read one isoform at a time and
@@ -44,9 +44,10 @@ chr22  50012765  50018574  g14001.t1:split          0  -
 - **Donor and acceptor follow transcription.** The donor is the intron's 5' end:
   the record's `start` on a `+` model and its `end` on a `-` one, as in the
   minus-strand row above.
-- **It is a track.** Every capture and live link shows it as **Disagreements**,
-  under the prediction and above the reference, so the picture points at the
-  junction and the lane below says what it disagrees _with_.
-- **It reaches further than the page.** A model sharing four of five junctions
-  is `agrees` and gets no card, yet its fifth is still an edit. On chr22 the BED
-  lists 58 such models.
+- **The Disagreements track.** Every capture and live link shows it as
+  **Disagreements**, under the prediction and above the reference, so the
+  picture points at the junction and the lane below says what it disagrees
+  _with_.
+- **It lists models the page leaves out.** A model sharing four of five
+  junctions is `agrees` and gets no card, yet its fifth is still an edit. On
+  chr22 the BED lists 58 such models.
