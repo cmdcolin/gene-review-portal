@@ -73,6 +73,11 @@ built.
 - [Gene track](https://jbrowse.org/jb2/docs/user_guides/gene_track/) and
   [RNA-seq](https://jbrowse.org/jb2/docs/tutorials/rnaseq/) guides
 
+gene-review-portal is an example app: its cards, keys and questions fit the
+reviews it was built for. A review that needs others may be within reach of a
+coding agent working from this code, which can write the bespoke cards,
+questions or evidence checks your annotation calls for.
+
 ## License
 
 Apache-2.0. Extracted from
